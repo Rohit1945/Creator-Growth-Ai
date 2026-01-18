@@ -40,3 +40,8 @@ waitForPort = 5000
 
 [agent]
 integrations = ["javascript_openai_ai_integrations:2.0.0"]
+
+[userenv]
+
+[userenv.shared]
+YOUTUBE_API_KEY = "AIzaSyDYbVp3ccwfpaxz0fAVA9SNKEwWt_kC0qo"
