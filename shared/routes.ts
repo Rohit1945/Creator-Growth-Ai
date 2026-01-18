@@ -52,6 +52,12 @@ export const api = {
   },
 };
 
+export type AnalysisRequest = z.infer<typeof api.analyze.input>;
+export type AnalysisResponse = z.infer<typeof api.analyze.responses[200]>;
+export type ValidationError = z.infer<typeof errorSchemas.validation>;
+export type NotFoundError = z.infer<typeof errorSchemas.notFound>;
+export type InternalError = z.infer<typeof errorSchemas.internal>;
+
 export function buildUrl(path: string, params?: Record<string, string | number>): string {
   let url = path;
   if (params) {

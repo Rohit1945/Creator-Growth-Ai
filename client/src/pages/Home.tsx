@@ -409,7 +409,7 @@ export default function Home() {
                   {/* Titles */}
                   <ResultCard title="High-CTR Titles" icon={FileText} delay={0.1}>
                     <ul className="space-y-3">
-                      {result.titles.map((title, i) => (
+                      {result.titles.map((title: string, i: number) => (
                         <li key={i} className="p-3 rounded-xl bg-background/50 border border-white/5 hover:border-primary/30 transition-colors flex gap-3 group/item">
                           <span className="text-primary/50 font-mono text-sm pt-0.5">0{i+1}</span>
                           <span className="text-sm font-medium group-hover/item:text-primary transition-colors">{title}</span>
@@ -429,7 +429,7 @@ export default function Home() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <ResultCard title="Hashtags" icon={Hash} delay={0.3}>
                       <div className="flex flex-wrap gap-2">
-                        {result.hashtags.map((tag, i) => (
+                        {result.hashtags.map((tag: string, i: number) => (
                           <span key={i} className="px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-400 text-xs font-medium border border-blue-500/10 hover:border-blue-500/30 transition-colors">
                             {tag}
                           </span>
@@ -439,7 +439,7 @@ export default function Home() {
 
                     <ResultCard title="SEO Tags" icon={Tag} delay={0.4}>
                       <div className="flex flex-wrap gap-2">
-                        {result.tags.map((tag, i) => (
+                        {result.tags.map((tag: string, i: number) => (
                           <span key={i} className="px-2.5 py-1 rounded-md bg-white/5 text-muted-foreground text-xs font-medium border border-white/5 hover:border-white/20 transition-colors">
                             {tag}
                           </span>
@@ -451,7 +451,7 @@ export default function Home() {
                   {/* Next Ideas */}
                   <ResultCard title="Next Video Ideas" icon={Lightbulb} delay={0.5}>
                     <div className="grid gap-4">
-                      {result.nextVideoIdeas.map((item, i) => (
+                      {result.nextVideoIdeas.map((item: { idea: string; reason: string }, i: number) => (
                         <div key={i} className="p-4 rounded-xl bg-gradient-to-br from-white/5 to-transparent border border-white/5 hover:border-white/10 transition-colors">
                           <h4 className="font-semibold text-foreground mb-1">{item.idea}</h4>
                           <p className="text-xs text-muted-foreground">{item.reason}</p>
