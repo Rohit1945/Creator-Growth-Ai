@@ -77,10 +77,13 @@ export default function Home() {
         description: "YouTube video details imported successfully!",
       });
     } catch (err: any) {
+      const isSetupError = err.message.includes("API key not configured");
       toast({
-        title: "Error",
+        title: isSetupError ? "YouTube Setup Needed" : "Error",
         variant: "destructive",
-        description: err.message || "Could not fetch YouTube video. Please check the URL.",
+        description: isSetupError 
+          ? "Please add your 'YOUTUBE_API_KEY' to the Secrets tab (padlock icon) in the sidebar."
+          : err.message || "Could not fetch YouTube video. Please check the URL.",
       });
     } finally {
       setIsFetchingYoutube(false);
