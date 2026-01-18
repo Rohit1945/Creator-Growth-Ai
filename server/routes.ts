@@ -122,11 +122,11 @@ export async function registerRoutes(
         - nextVideoIdeas: array of 2 objects with { idea: string, reason: string }
 
         Do NOT exaggerate views or guarantee virality. Use range-based prediction.
-        Ensure the response is valid JSON.
+        Ensure the response is valid JSON and matches the required structure exactly.
       `;
 
       const aiResponse = await openai.chat.completions.create({
-        model: "gpt-5.1",
+        model: "gpt-4o",
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
       });
@@ -172,7 +172,7 @@ export async function registerRoutes(
       `;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-5.1",
+        model: "gpt-4o",
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
       });

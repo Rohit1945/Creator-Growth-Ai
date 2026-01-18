@@ -115,9 +115,8 @@ export default function Home() {
       if (!res.ok) throw new Error(data.message || "Failed to upload video");
 
       setUploadState("analyzing");
-      // Simulate slight delay for "Analyzing" state visibility as the backend is fast
-      await new Promise(r => setTimeout(r, 800));
-
+      
+      // Update form and results
       form.setValue("transcript", data.transcript);
       setLocalResult(data.analysis);
       setHasResult(true);
@@ -130,7 +129,7 @@ export default function Home() {
 
       setTimeout(() => {
         document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
+      }, 300);
     } catch (err: any) {
       setUploadState("idle");
       toast({
