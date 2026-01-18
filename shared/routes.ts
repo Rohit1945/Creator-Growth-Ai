@@ -28,7 +28,7 @@ export const api = {
   fetchYoutubeVideo: {
     method: 'POST' as const,
     path: '/api/fetchYoutubeVideo',
-    input: z.object({ url: z.string().url() }),
+    input: z.object({ url: z.string() }),
     responses: {
       200: z.object({
         title: z.string(),

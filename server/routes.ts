@@ -35,13 +35,32 @@ export async function registerRoutes(
   app.post(api.fetchYoutubeVideo.path, async (req, res) => {
     try {
       const { url } = api.fetchYoutubeVideo.input.parse(req.body);
-      const videoIdMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
-      const videoId = videoIdMatch?.[1];
+      const youtubeRegex = /(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/;
+      const match = url.match(youtubeRegex);
+      let videoId = match ? match[1] : null;
 
-      if (!videoId) return res.status(400).json({ message: "Invalid YouTube URL" });
+      if (!videoId && url.length === 11 && /^[a-zA-Z0-9_-]{11}$/.test(url)) {
+        videoId = url;
+      }
 
-      const response = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${process.env.YOUTUBE_API_KEY}`);
-      const data = await response.json();
+      console.log("Extracted video ID:", videoId, "from URL:", url);
+
+      if (!videoId) return res.status(400).json({ message: "Invalid YouTube URL or Video ID" });
+
+      const apiKey = process.env.YOUTUBE_API_KEY;
+      if (!apiKey) {
+        console.error("YOUTUBE_API_KEY is missing");
+        return res.status(500).json({ message: "YouTube API key not configured. Please add YOUTUBE_API_KEY to secrets." });
+      }
+
+      const apiUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${apiKey}`;
+      const response = await fetch(apiUrl);
+      const data = await response.json() as any;
+      
+      if (data.error) {
+        console.error("YouTube API Error:", data.error);
+        return res.status(500).json({ message: data.error.message || "YouTube API error" });
+      }
 
       if (!data.items?.length) return res.status(404).json({ message: "Video not found" });
 
@@ -54,16 +73,16 @@ export async function registerRoutes(
       });
     } catch (err) {
       console.error("YouTube fetch error:", err);
-      res.status(500).json({ message: "Failed to fetch YouTube video" });
+      res.status(500).json({ message: "Failed to fetch YouTube video details" });
     }
   });
 
-  app.post(api.uploadVideo.path, upload.single("video"), async (req, res) => {
+  app.post(api.uploadVideo.path, upload.single("video"), async (req: any, res) => {
     let videoPath: string | undefined;
     let audioPath: string | undefined;
     try {
       if (!req.file) return res.status(400).json({ message: "No video file uploaded" });
-      videoPath = req.file.path;
+      videoPath = req.file.path as string;
 
       audioPath = await extractAudio(videoPath);
       const audioFile = await fs.readFile(audioPath);

@@ -54,7 +54,7 @@ export default function Home() {
   });
 
   const handleYoutubeFetch = async () => {
-    const url = form.getValues("youtubeUrl");
+    const url = form.getValues("youtubeUrl")?.trim();
     if (!url) return;
 
     setIsFetchingYoutube(true);
@@ -65,19 +65,22 @@ export default function Home() {
         body: JSON.stringify({ url }),
       });
 
-      if (!res.ok) throw new Error("Failed to fetch video details");
-
       const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to fetch video details");
+      }
+
       form.setValue("idea", `Title: ${data.title}\nDescription: ${data.description}\nTags: ${data.tags.join(", ")}\nChannel: ${data.channelTitle}`);
       toast({
         title: "Success",
         description: "YouTube video details imported successfully!",
       });
-    } catch (err) {
+    } catch (err: any) {
       toast({
         title: "Error",
         variant: "destructive",
-        description: "Could not fetch YouTube video. Please check the URL.",
+        description: err.message || "Could not fetch YouTube video. Please check the URL.",
       });
     } finally {
       setIsFetchingYoutube(false);
