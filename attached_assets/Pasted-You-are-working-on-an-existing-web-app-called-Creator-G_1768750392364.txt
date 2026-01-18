@@ -1,0 +1,133 @@
+You are working on an existing web app called Creator Growth AI built with Next.js (App Router), React, TypeScript, Tailwind CSS.
+The UI and core AI logic already exist and are working well.
+Your task is to FINALIZE the app completely with zero bugs.
+
+CURRENT STATE (IMPORTANT – DO NOT BREAK)
+
+UI is finalized and must NOT be redesigned or visually changed
+
+Text input + YouTube link input works
+
+YouTube Data API integration works using YOUTUBE_API_KEY
+
+Video upload works up to transcription
+
+Existing /api/analyze route produces correct AI output:
+
+Titles
+
+Description
+
+Hashtags
+
+Tags
+
+Performance / reach prediction
+
+Next video ideas
+
+REQUIRED FIXES & COMPLETION TASKS
+1. COMPLETE VIDEO UPLOAD FLOW (CRITICAL)
+
+The /api/uploadVideo route must:
+
+Accept .mp4 / .mov
+
+Extract audio
+
+Transcribe audio to text
+
+Immediately send the transcript to the existing /api/analyze route
+
+Return a single JSON response:
+
+{
+  "transcript": "...",
+  "analysis": { full AI output }
+}
+
+
+Do NOT return transcript alone
+
+Do NOT stop at “Transcribing…”
+
+2. FRONTEND STATE FIX (NO STUCK STATES)
+
+Frontend must clearly transition states:
+
+"idle"
+
+"transcribing"
+
+"analyzing"
+
+"done"
+
+When "done":
+
+Render results using existing Day-1 UI cards
+
+Ensure no infinite loading, no undefined states
+
+3. ERROR HANDLING (SILENT & CLEAN)
+
+Handle:
+
+Invalid YouTube links
+
+Empty transcript
+
+Unsupported file type
+
+Missing API keys
+
+Show clean user-friendly messages
+
+App must never crash or white-screen
+
+4. CODE QUALITY CONSTRAINTS (VERY IMPORTANT)
+
+Do NOT create massive 1000+ line files
+
+Keep logic modular and readable
+
+No unnecessary libraries
+
+No database
+
+No authentication
+
+Keep everything compatible with Replit Free Tier
+
+5. FINAL VERIFICATION
+
+After completing changes, ensure:
+
+Text input → works
+
+YouTube link → works
+
+Video upload → works end-to-end
+
+All three paths produce identical AI output format
+
+No console errors
+
+No TypeScript errors
+
+GOAL
+
+Deliver a production-ready MVP that:
+
+Analyzes creator content
+
+Predicts reach & engagement
+
+Suggests optimized metadata
+
+Suggests future video ideas
+
+This is the final completion pass.
+Do not add new features.
+Do not redesign UI.
+Focus only on correctness, stability, and polish.

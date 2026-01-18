@@ -45,7 +45,10 @@ export const api = {
     path: '/api/uploadVideo',
     // input: FormData (handled via multer/middleware)
     responses: {
-      200: z.object({ transcript: z.string() }),
+      200: z.object({ 
+        transcript: z.string(),
+        analysis: analysisResponseSchema
+      }),
       400: errorSchemas.validation,
       500: errorSchemas.internal,
     },

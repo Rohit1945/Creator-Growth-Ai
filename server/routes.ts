@@ -82,8 +82,13 @@ export async function registerRoutes(
     let audioPath: string | undefined;
     try {
       if (!req.file) return res.status(400).json({ message: "No video file uploaded" });
-      videoPath = req.file.path as string;
+      
+      const fileType = req.file.mimetype;
+      if (!fileType.includes("mp4") && !fileType.includes("quicktime") && !fileType.includes("video")) {
+        return res.status(400).json({ message: "Unsupported file type. Please upload .mp4 or .mov" });
+      }
 
+      videoPath = req.file.path as string;
       audioPath = await extractAudio(videoPath);
       const audioFile = await fs.readFile(audioPath);
       const file = await toFile(audioFile, "audio.mp3");
@@ -93,7 +98,44 @@ export async function registerRoutes(
         model: "gpt-4o-mini-transcribe",
       });
 
-      res.json({ transcript: transcription.text });
+      const transcript = transcription.text;
+      if (!transcript || transcript.trim().length < 5) {
+        return res.status(400).json({ message: "Could not transcribe audio. The video might be silent or too short." });
+      }
+
+      // Perform analysis immediately
+      const prompt = `
+        Act as a professional YouTube growth strategist. Analyze the following video content:
+        
+        Platform: YouTube
+        Niche: General
+        Channel Size: Small
+        Video Type: Long
+        Idea/Script/Transcript: ${transcript}
+
+        Return a JSON object with the following fields:
+        - titles: 3 high-CTR titles (optimized for CTR, not clickbait)
+        - description: SEO-optimized description (first 2 lines as hook)
+        - hashtags: array of relevant hashtags (e.g. ["#tag1", "#tag2"])
+        - tags: array of relevant tags (e.g. ["tag1", "tag2"])
+        - performancePrediction: object with { potential: "Low" | "Medium" | "High", confidenceScore: number (0-100), reason: string (short explanation) }
+        - nextVideoIdeas: array of 2 objects with { idea: string, reason: string }
+
+        Do NOT exaggerate views or guarantee virality. Use range-based prediction.
+        Ensure the response is valid JSON.
+      `;
+
+      const aiResponse = await openai.chat.completions.create({
+        model: "gpt-5.1",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+      });
+
+      const content = aiResponse.choices[0].message.content;
+      if (!content) throw new Error("No response from AI");
+
+      const analysis = JSON.parse(content);
+      res.json({ transcript, analysis });
     } catch (err) {
       console.error("Upload error:", err);
       res.status(500).json({ message: "Failed to process video" });

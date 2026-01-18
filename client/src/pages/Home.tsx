@@ -35,10 +35,14 @@ const PlatformIcons = {
 export default function Home() {
   const [hasResult, setHasResult] = useState(false);
   const [isFetchingYoutube, setIsFetchingYoutube] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const [uploadState, setUploadState] = useState<"idle" | "transcribing" | "analyzing" | "done">("idle");
+  const [localResult, setLocalResult] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  const { mutate, isPending, data: result, error } = useAnalyzeVideo();
+  const { mutate, isPending, data: queryResult, error } = useAnalyzeVideo();
+
+  const result = localResult || queryResult;
+  const isGlobalPending = isPending || uploadState === "transcribing" || uploadState === "analyzing";
 
   const form = useForm<AnalysisRequest>({
     resolver: zodResolver(analysisRequestSchema),
@@ -94,7 +98,10 @@ export default function Home() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsUploading(true);
+    setUploadState("transcribing");
+    setHasResult(false);
+    setLocalResult(null);
+
     const formData = new FormData();
     formData.append("video", file);
 
@@ -104,30 +111,44 @@ export default function Home() {
         body: formData,
       });
 
-      if (!res.ok) throw new Error("Failed to upload video");
-
       const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to upload video");
+
+      setUploadState("analyzing");
+      // Simulate slight delay for "Analyzing" state visibility as the backend is fast
+      await new Promise(r => setTimeout(r, 800));
+
       form.setValue("transcript", data.transcript);
+      setLocalResult(data.analysis);
+      setHasResult(true);
+      setUploadState("done");
+
       toast({
         title: "Success",
-        description: "Video transcribed successfully!",
+        description: "Video analyzed successfully!",
       });
-    } catch (err) {
+
+      setTimeout(() => {
+        document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    } catch (err: any) {
+      setUploadState("idle");
       toast({
         title: "Error",
         variant: "destructive",
-        description: "Failed to process video file.",
+        description: err.message || "Failed to process video file.",
       });
-    } finally {
-      setIsUploading(false);
     }
   };
 
   const onSubmit = (data: AnalysisRequest) => {
     setHasResult(false);
+    setLocalResult(null);
+    setUploadState("idle");
     mutate(data, {
       onSuccess: () => {
         setHasResult(true);
+        setUploadState("done");
         // Smooth scroll to results on mobile
         setTimeout(() => {
           document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' });
@@ -270,11 +291,13 @@ export default function Home() {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploading}
+                      disabled={uploadState !== "idle"}
                       className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-white/10 hover:border-primary/30 hover:bg-white/5 transition-all text-sm text-muted-foreground"
                     >
                       <Upload className="w-4 h-4" />
-                      {isUploading ? "Transcribing..." : "Upload .mp4 or .mov"}
+                      {uploadState === "transcribing" ? "Transcribing..." : 
+                       uploadState === "analyzing" ? "Analyzing..." : 
+                       "Upload .mp4 or .mov"}
                     </button>
                   </div>
                 </div>
@@ -303,16 +326,16 @@ export default function Home() {
 
                 <button
                   type="submit"
-                  disabled={isPending || isUploading || isFetchingYoutube}
+                  disabled={isGlobalPending || isFetchingYoutube}
                   className="w-full py-4 rounded-xl font-bold text-lg bg-gradient-to-r from-primary to-accent text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 active:shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all duration-200"
                 >
-                  {isPending ? (
+                  {isGlobalPending ? (
                     <span className="flex items-center justify-center gap-2">
                       <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Analyzing...
+                      {uploadState === "transcribing" ? "Transcribing..." : "Analyzing..."}
                     </span>
                   ) : (
                     "Analyze Video"
@@ -325,7 +348,7 @@ export default function Home() {
           {/* Results Section */}
           <div className="lg:col-span-7 space-y-6" id="results-section">
             <AnimatePresence mode="wait">
-              {!hasResult && !isPending && (
+              {!hasResult && !isGlobalPending && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -337,7 +360,7 @@ export default function Home() {
                 </motion.div>
               )}
               
-              {isPending && (
+              {isGlobalPending && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -351,8 +374,12 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <h3 className="text-xl font-display font-bold text-foreground">Generating Strategy</h3>
-                    <p className="text-muted-foreground">Analyzing trends, optimizing keywords...</p>
+                    <h3 className="text-xl font-display font-bold text-foreground">
+                      {uploadState === "transcribing" ? "Transcribing Video" : "Generating Strategy"}
+                    </h3>
+                    <p className="text-muted-foreground">
+                      {uploadState === "transcribing" ? "Extracting audio and converting to text..." : "Analyzing trends, optimizing keywords..."}
+                    </p>
                   </div>
                 </motion.div>
               )}
