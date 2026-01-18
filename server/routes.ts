@@ -35,7 +35,7 @@ export async function registerRoutes(
   app.post(api.fetchYoutubeVideo.path, async (req, res) => {
     try {
       const { url } = api.fetchYoutubeVideo.input.parse(req.body);
-      const youtubeRegex = /(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/;
+      const youtubeRegex = /(?:https?:\/\/)?(?:www\.|m\.)?youtu(?:be\.com\/(?:watch\?v=|embed\/|v\/|shorts\/|live\/)|.be\/)([a-zA-Z0-9_-]{11})/;
       const match = url.match(youtubeRegex);
       let videoId = match ? match[1] : null;
 
