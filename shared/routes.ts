@@ -25,6 +25,31 @@ export const api = {
       500: errorSchemas.internal,
     },
   },
+  fetchYoutubeVideo: {
+    method: 'POST' as const,
+    path: '/api/fetchYoutubeVideo',
+    input: z.object({ url: z.string().url() }),
+    responses: {
+      200: z.object({
+        title: z.string(),
+        description: z.string(),
+        tags: z.array(z.string()),
+        channelTitle: z.string(),
+      }),
+      400: errorSchemas.validation,
+      500: errorSchemas.internal,
+    },
+  },
+  uploadVideo: {
+    method: 'POST' as const,
+    path: '/api/uploadVideo',
+    // input: FormData (handled via multer/middleware)
+    responses: {
+      200: z.object({ transcript: z.string() }),
+      400: errorSchemas.validation,
+      500: errorSchemas.internal,
+    },
+  },
 };
 
 export function buildUrl(path: string, params?: Record<string, string | number>): string {

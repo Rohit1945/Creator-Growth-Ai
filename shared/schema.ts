@@ -7,7 +7,9 @@ export const analysisRequestSchema = z.object({
   niche: z.string().min(1, "Please select a niche"),
   channelSize: z.enum(["Small", "Medium", "Large"]),
   videoType: z.enum(["Short", "Long"]),
-  idea: z.string().min(10, "Please provide a more detailed idea (at least 10 characters)"),
+  idea: z.string().min(10, "Please provide a more detailed idea (at least 10 characters)").optional(),
+  youtubeUrl: z.string().url().optional(),
+  transcript: z.string().optional(),
 });
 
 export const analysisResponseSchema = z.object({
