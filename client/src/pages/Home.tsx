@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { cn } from "@/lib/utils";
@@ -14,12 +14,16 @@ import {
   Tag, 
   FileText, 
   Lightbulb, 
-  AlertCircle 
+  AlertCircle,
+  Link as LinkIcon,
+  Upload
 } from "lucide-react";
 
 import { useAnalyzeVideo } from "@/hooks/use-analyze";
 import { analysisRequestSchema, type AnalysisRequest } from "@shared/schema";
 import { ResultCard } from "@/components/ResultCard";
+import { api, buildUrl } from "@shared/routes";
+import { useToast } from "@/hooks/use-toast";
 
 // Platform icons map
 const PlatformIcons = {
@@ -30,6 +34,10 @@ const PlatformIcons = {
 
 export default function Home() {
   const [hasResult, setHasResult] = useState(false);
+  const [isFetchingYoutube, setIsFetchingYoutube] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
   const { mutate, isPending, data: result, error } = useAnalyzeVideo();
 
   const form = useForm<AnalysisRequest>({
@@ -40,8 +48,74 @@ export default function Home() {
       channelSize: "Small",
       videoType: "Long",
       idea: "",
+      youtubeUrl: "",
+      transcript: "",
     },
   });
+
+  const handleYoutubeFetch = async () => {
+    const url = form.getValues("youtubeUrl");
+    if (!url) return;
+
+    setIsFetchingYoutube(true);
+    try {
+      const res = await fetch(api.fetchYoutubeVideo.path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+
+      if (!res.ok) throw new Error("Failed to fetch video details");
+
+      const data = await res.json();
+      form.setValue("idea", `Title: ${data.title}\nDescription: ${data.description}\nTags: ${data.tags.join(", ")}\nChannel: ${data.channelTitle}`);
+      toast({
+        title: "Success",
+        description: "YouTube video details imported successfully!",
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        variant: "destructive",
+        description: "Could not fetch YouTube video. Please check the URL.",
+      });
+    } finally {
+      setIsFetchingYoutube(false);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("video", file);
+
+    try {
+      const res = await fetch(api.uploadVideo.path, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Failed to upload video");
+
+      const data = await res.json();
+      form.setValue("transcript", data.transcript);
+      toast({
+        title: "Success",
+        description: "Video transcribed successfully!",
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        variant: "destructive",
+        description: "Failed to process video file.",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const onSubmit = (data: AnalysisRequest) => {
     setHasResult(false);
@@ -154,8 +228,53 @@ export default function Home() {
                   </div>
                 </div>
 
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground ml-1">Paste YouTube Link (Optional)</label>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <input
+                          {...form.register("youtubeUrl")}
+                          type="url"
+                          placeholder="https://youtube.com/watch?v=..."
+                          className="w-full pl-10 pr-4 py-3 rounded-xl glass-input outline-none focus:ring-2"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleYoutubeFetch}
+                        disabled={isFetchingYoutube || !form.watch("youtubeUrl")}
+                        className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 transition-colors text-sm font-medium"
+                      >
+                        {isFetchingYoutube ? "..." : "Fetch"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground ml-1">Upload Video (Optional)</label>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      accept=".mp4,.mov"
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-white/10 hover:border-primary/30 hover:bg-white/5 transition-all text-sm text-muted-foreground"
+                    >
+                      <Upload className="w-4 h-4" />
+                      {isUploading ? "Transcribing..." : "Upload .mp4 or .mov"}
+                    </button>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground ml-1">What's your video about?</label>
+                  <label className="text-sm font-medium text-muted-foreground ml-1">Video Idea or Script</label>
                   <textarea
                     {...form.register("idea")}
                     placeholder="Describe your video idea, script, or main topic here..."
@@ -178,7 +297,7 @@ export default function Home() {
 
                 <button
                   type="submit"
-                  disabled={isPending}
+                  disabled={isPending || isUploading || isFetchingYoutube}
                   className="w-full py-4 rounded-xl font-bold text-lg bg-gradient-to-r from-primary to-accent text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 active:shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all duration-200"
                 >
                   {isPending ? (
