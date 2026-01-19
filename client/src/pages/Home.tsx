@@ -76,9 +76,14 @@ export default function Home() {
       }
 
       form.setValue("idea", `Title: ${data.title}\nDescription: ${data.description}\nTags: ${data.tags.join(", ")}\nChannel: ${data.channelTitle}`);
+      
+      // Immediate analysis for YouTube path
+      const currentValues = form.getValues();
+      onSubmit(currentValues);
+
       toast({
         title: "Success",
-        description: "YouTube video details imported successfully!",
+        description: "YouTube video details imported and analyzed!",
       });
     } catch (err: any) {
       const isSetupError = err.message.includes("API key not configured");
