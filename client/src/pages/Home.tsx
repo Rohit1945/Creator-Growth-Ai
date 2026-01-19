@@ -35,27 +35,74 @@ const PlatformIcons = {
   TikTok: Music2,
 };
 
-function Timer({ isRunning }: { isRunning: boolean }) {
-  const [seconds, setSeconds] = useState(0);
+function Countdown({ initialSeconds, isRunning }: { initialSeconds: number; isRunning: boolean }) {
+  const [remaining, setRemaining] = useState(initialSeconds);
+
+  useEffect(() => {
+    if (isRunning) {
+      setRemaining(initialSeconds);
+    }
+  }, [isRunning, initialSeconds]);
 
   useEffect(() => {
     let interval: any;
-    if (isRunning) {
-      setSeconds(0);
+    if (isRunning && remaining > 0) {
       interval = setInterval(() => {
-        setSeconds((s) => s + 1);
+        setRemaining((r) => Math.max(0, r - 1));
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isRunning]);
+  }, [isRunning, remaining]);
 
   if (!isRunning) return null;
 
   return (
-    <div className="flex items-center gap-2 text-primary font-mono text-sm animate-pulse">
-      <Clock className="w-4 h-4" />
-      <span>Processing: {seconds}s</span>
+    <div className="flex flex-col items-center gap-2">
+      <div className="flex items-center gap-2 text-primary font-mono text-sm">
+        <Clock className="w-4 h-4" />
+        <span>Estimated Time: ~{remaining}s</span>
+      </div>
+      <div className="w-48 h-1 bg-white/5 rounded-full overflow-hidden">
+        <motion.div 
+          className="h-full bg-primary"
+          initial={{ width: "0%" }}
+          animate={{ width: `${Math.min(100, ((initialSeconds - remaining) / initialSeconds) * 100)}%` }}
+          transition={{ ease: "linear" }}
+        />
+      </div>
     </div>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="mt-20 border-t border-white/5 py-12 relative overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[60%] h-[100%] bg-primary/5 rounded-full blur-[100px]" />
+      </div>
+      <div className="max-w-7xl mx-auto px-4 text-center space-y-8 relative z-10">
+        <div className="flex flex-col items-center gap-4">
+          <h2 className="text-2xl font-display font-bold text-gradient">Creator Growth AI</h2>
+          <p className="text-muted-foreground max-w-md mx-auto text-sm leading-relaxed">
+            The ultimate toolkit for modern creators. Optimize your strategy, predict your growth, and dominate social media.
+          </p>
+        </div>
+        <div className="flex items-center justify-center gap-6">
+          <a href="#" className="p-2 rounded-full bg-white/5 border border-white/10 hover:border-primary/30 hover:bg-white/10 transition-all">
+            <Youtube className="w-5 h-5 text-muted-foreground" />
+          </a>
+          <a href="#" className="p-2 rounded-full bg-white/5 border border-white/10 hover:border-primary/30 hover:bg-white/10 transition-all">
+            <Instagram className="w-5 h-5 text-muted-foreground" />
+          </a>
+          <a href="#" className="p-2 rounded-full bg-white/5 border border-white/10 hover:border-primary/30 hover:bg-white/10 transition-all">
+            <Music2 className="w-5 h-5 text-muted-foreground" />
+          </a>
+        </div>
+        <div className="pt-8 border-t border-white/5 text-xs text-muted-foreground/40">
+          © {new Date().getFullYear()} Creator Growth AI. All rights reserved. Built for visionaries.
+        </div>
+      </div>
+    </footer>
   );
 }
 
@@ -64,6 +111,7 @@ export default function Home() {
   const [isFetchingYoutube, setIsFetchingYoutube] = useState(false);
   const [uploadState, setUploadState] = useState<"idle" | "transcribing" | "analyzing" | "done">("idle");
   const [localResult, setLocalResult] = useState<any>(null);
+  const [estimatedTime, setEstimatedTime] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { mutate, isPending, data: queryResult, error } = useAnalyzeVideo();
@@ -136,6 +184,11 @@ export default function Home() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Estimate processing time: 20s base + 4s per MB
+    const mb = file.size / (1024 * 1024);
+    const est = Math.ceil(20 + (mb * 4));
+    setEstimatedTime(est);
+
     setUploadState("transcribing");
     setHasResult(false);
     setLocalResult(null);
@@ -170,6 +223,7 @@ export default function Home() {
       }, 300);
     } catch (err: any) {
       setUploadState("idle");
+      setEstimatedTime(0);
       toast({
         title: "Error",
         variant: "destructive",
@@ -182,15 +236,20 @@ export default function Home() {
     setHasResult(false);
     setLocalResult(null);
     setUploadState("idle");
+    setEstimatedTime(25); // Default estimate for text/youtube analysis
     mutate(data, {
       onSuccess: () => {
         setHasResult(true);
         setUploadState("done");
+        setEstimatedTime(0);
         // Smooth scroll to results on mobile
         setTimeout(() => {
           document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' });
         }, 100);
       },
+      onError: () => {
+        setEstimatedTime(0);
+      }
     });
   };
 
@@ -424,7 +483,7 @@ export default function Home() {
                       {uploadState === "transcribing" ? "Extracting audio and converting to text..." : "Analyzing trends, optimizing keywords..."}
                     </p>
                     <div className="flex justify-center pt-2">
-                      <Timer isRunning={isGlobalPending} />
+                      <Countdown initialSeconds={estimatedTime} isRunning={isGlobalPending} />
                     </div>
                   </div>
                 </motion.div>
@@ -544,6 +603,7 @@ export default function Home() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
