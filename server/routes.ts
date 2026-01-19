@@ -9,6 +9,7 @@ import fs from "fs/promises";
 import { spawn } from "child_process";
 import path from "path";
 import os from "os";
+import crypto from "crypto";
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -37,6 +38,22 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Record unique viewer on root access
+  app.get("/", async (req, res, next) => {
+    const ip = req.ip || req.headers["x-forwarded-for"] || "unknown";
+    const ipHash = crypto.createHash("sha256").update(String(ip)).digest("hex");
+    await storage.recordViewer(ipHash).catch(console.error);
+    next();
+  });
+
+  app.get("/api/viewers", async (_req, res) => {
+    try {
+      const count = await storage.getViewerCount();
+      res.json({ count });
+    } catch (err) {
+      res.status(500).json({ message: "Failed to fetch viewer count" });
+    }
+  });
   app.post(api.fetchYoutubeVideo.path, async (req, res) => {
     try {
       const { url } = api.fetchYoutubeVideo.input.parse(req.body);

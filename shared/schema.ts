@@ -28,5 +28,11 @@ export const analysisResponseSchema = z.object({
   })),
 });
 
+export const viewers = pgTable("viewers", {
+  id: serial("id").primaryKey(),
+  ipHash: text("ip_hash").notNull().unique(),
+});
+
 export type AnalysisRequest = z.infer<typeof analysisRequestSchema>;
 export type AnalysisResponse = z.infer<typeof analysisResponseSchema>;
+export type Viewer = typeof viewers.$inferSelect;

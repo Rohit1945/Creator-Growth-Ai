@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { cn } from "@/lib/utils";
@@ -16,7 +16,9 @@ import {
   Lightbulb, 
   AlertCircle,
   Link as LinkIcon,
-  Upload
+  Upload,
+  Clock,
+  Users
 } from "lucide-react";
 
 import { useAnalyzeVideo } from "@/hooks/use-analyze";
@@ -24,6 +26,7 @@ import { analysisRequestSchema, type AnalysisRequest } from "@shared/schema";
 import { ResultCard } from "@/components/ResultCard";
 import { api, buildUrl } from "@shared/routes";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 
 // Platform icons map
 const PlatformIcons = {
@@ -31,6 +34,30 @@ const PlatformIcons = {
   Instagram: Instagram,
   TikTok: Music2,
 };
+
+function Timer({ isRunning }: { isRunning: boolean }) {
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    let interval: any;
+    if (isRunning) {
+      setSeconds(0);
+      interval = setInterval(() => {
+        setSeconds((s) => s + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isRunning]);
+
+  if (!isRunning) return null;
+
+  return (
+    <div className="flex items-center gap-2 text-primary font-mono text-sm animate-pulse">
+      <Clock className="w-4 h-4" />
+      <span>Processing: {seconds}s</span>
+    </div>
+  );
+}
 
 export default function Home() {
   const [hasResult, setHasResult] = useState(false);
@@ -40,6 +67,12 @@ export default function Home() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { mutate, isPending, data: queryResult, error } = useAnalyzeVideo();
+
+  const { data: viewerData } = useQuery<{ count: number }>({
+    queryKey: ["/api/viewers"],
+  });
+
+  const viewerCount = viewerData?.count;
 
   const result = localResult || queryResult;
   const isGlobalPending = isPending || uploadState === "transcribing" || uploadState === "analyzing";
@@ -187,6 +220,12 @@ export default function Home() {
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             Turn simple ideas into viral content. Get optimized titles, tags, and performance predictions in seconds.
           </p>
+          {viewerCount !== undefined && (
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground pt-4">
+              <Users className="w-4 h-4 text-primary" />
+              <span>{viewerCount} creators joined</span>
+            </div>
+          )}
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
@@ -384,6 +423,9 @@ export default function Home() {
                     <p className="text-muted-foreground">
                       {uploadState === "transcribing" ? "Extracting audio and converting to text..." : "Analyzing trends, optimizing keywords..."}
                     </p>
+                    <div className="flex justify-center pt-2">
+                      <Timer isRunning={isGlobalPending} />
+                    </div>
                   </div>
                 </motion.div>
               )}
