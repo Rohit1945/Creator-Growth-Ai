@@ -163,9 +163,13 @@ export default function Home() {
 
       form.setValue("idea", `Title: ${data.title}\nDescription: ${data.description}\nTags: ${data.tags.join(", ")}\nChannel: ${data.channelTitle}`);
       
+      // Immediate analysis for YouTube path
+      const currentValues = form.getValues();
+      onSubmit(currentValues);
+
       toast({
         title: "Success",
-        description: "YouTube video details imported! Click Analyze to continue.",
+        description: "YouTube video details imported and analyzed!",
       });
     } catch (err: any) {
       const isSetupError = err.message.includes("API key not configured");
@@ -208,13 +212,20 @@ export default function Home() {
 
       setUploadState("analyzing");
       
+      // Update form and results
       form.setValue("transcript", data.transcript);
+      setLocalResult(data.analysis);
+      setHasResult(true);
       setUploadState("done");
 
       toast({
         title: "Success",
-        description: "Video transcribed! Click Analyze to continue.",
+        description: "Video analyzed successfully!",
       });
+
+      setTimeout(() => {
+        document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' });
+      }, 300);
     } catch (err: any) {
       setUploadState("idle");
       setEstimatedTime(0);
