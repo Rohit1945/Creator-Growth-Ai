@@ -18,7 +18,9 @@ import {
   Link as LinkIcon,
   Upload,
   Clock,
-  Users
+  Users,
+  MessageSquare,
+  Send
 } from "lucide-react";
 
 import { useAnalyzeVideo } from "@/hooks/use-analyze";
@@ -112,6 +114,9 @@ export default function Home() {
   const [uploadState, setUploadState] = useState<"idle" | "transcribing" | "analyzing" | "done">("idle");
   const [localResult, setLocalResult] = useState<any>(null);
   const [estimatedTime, setEstimatedTime] = useState(0);
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant', content: string }[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [isChatting, setIsChatting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { mutate, isPending, data: queryResult, error } = useAnalyzeVideo();
@@ -158,13 +163,9 @@ export default function Home() {
 
       form.setValue("idea", `Title: ${data.title}\nDescription: ${data.description}\nTags: ${data.tags.join(", ")}\nChannel: ${data.channelTitle}`);
       
-      // Immediate analysis for YouTube path
-      const currentValues = form.getValues();
-      onSubmit(currentValues);
-
       toast({
         title: "Success",
-        description: "YouTube video details imported and analyzed!",
+        description: "YouTube video details imported! Click Analyze to continue.",
       });
     } catch (err: any) {
       const isSetupError = err.message.includes("API key not configured");
@@ -207,20 +208,13 @@ export default function Home() {
 
       setUploadState("analyzing");
       
-      // Update form and results
       form.setValue("transcript", data.transcript);
-      setLocalResult(data.analysis);
-      setHasResult(true);
       setUploadState("done");
 
       toast({
         title: "Success",
-        description: "Video analyzed successfully!",
+        description: "Video transcribed! Click Analyze to continue.",
       });
-
-      setTimeout(() => {
-        document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' });
-      }, 300);
     } catch (err: any) {
       setUploadState("idle");
       setEstimatedTime(0);
@@ -238,8 +232,9 @@ export default function Home() {
     setUploadState("idle");
     setEstimatedTime(25); // Default estimate for text/youtube analysis
     mutate(data, {
-      onSuccess: () => {
+      onSuccess: (res) => {
         setHasResult(true);
+        setLocalResult(res);
         setUploadState("done");
         setEstimatedTime(0);
         // Smooth scroll to results on mobile
@@ -251,6 +246,37 @@ export default function Home() {
         setEstimatedTime(0);
       }
     });
+  };
+
+  const handleChat = async () => {
+    if (!chatInput.trim() || isChatting) return;
+
+    const userMsg = { role: 'user' as const, content: chatInput };
+    setChatMessages(prev => [...prev, userMsg]);
+    setChatInput("");
+    setIsChatting(true);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: chatInput,
+          history: chatMessages,
+          context: result
+        })
+      });
+
+      const data = await res.json();
+      if (data.updatedAnalysis) {
+        setLocalResult(data.updatedAnalysis);
+      }
+      setChatMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
+    } catch (err) {
+      toast({ title: "Error", variant: "destructive", description: "Chat failed." });
+    } finally {
+      setIsChatting(false);
+    }
   };
 
   return (
@@ -440,7 +466,7 @@ export default function Home() {
                       {uploadState === "transcribing" ? "Transcribing..." : "Analyzing..."}
                     </span>
                   ) : (
-                    "Analyze Video"
+                    "Analyze Video Idea and Script"
                   )}
                 </button>
               </form>
@@ -595,6 +621,54 @@ export default function Home() {
                           <p className="text-xs text-muted-foreground">{item.reason}</p>
                         </div>
                       ))}
+                    </div>
+                  </ResultCard>
+
+                  {/* AI Refinement Chat */}
+                  <ResultCard title="Refine Your Strategy" icon={MessageSquare} delay={0.6}>
+                    <div className="space-y-4">
+                      <div className="max-h-[300px] overflow-y-auto space-y-4 p-4 rounded-xl bg-black/20 border border-white/5">
+                        {chatMessages.length === 0 && (
+                          <p className="text-sm text-muted-foreground text-center italic py-4">
+                            Ask AI to tweak the titles, description, or ask for more viral tips!
+                          </p>
+                        )}
+                        {chatMessages.map((msg, i) => (
+                          <div key={i} className={cn(
+                            "flex flex-col gap-1 max-w-[80%]",
+                            msg.role === 'user' ? "ml-auto items-end" : "items-start"
+                          )}>
+                            <div className={cn(
+                              "px-4 py-2 rounded-2xl text-sm",
+                              msg.role === 'user' ? "bg-primary text-white rounded-tr-none" : "bg-white/10 text-foreground rounded-tl-none"
+                            )}>
+                              {msg.content}
+                            </div>
+                          </div>
+                        ))}
+                        {isChatting && (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground animate-pulse">
+                            <Sparkles className="w-3 h-3" />
+                            AI is thinking...
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <input 
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleChat()}
+                          placeholder="Change the titles to be more aggressive..."
+                          className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                        />
+                        <button 
+                          onClick={handleChat}
+                          disabled={isChatting || !chatInput.trim()}
+                          className="p-2 rounded-xl bg-primary text-white hover:opacity-90 disabled:opacity-50 transition-all"
+                        >
+                          <Send className="w-5 h-5" />
+                        </button>
+                      </div>
                     </div>
                   </ResultCard>
                 </motion.div>

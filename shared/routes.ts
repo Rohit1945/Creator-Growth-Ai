@@ -45,11 +45,21 @@ export const api = {
     path: '/api/uploadVideo',
     // input: FormData (handled via multer/middleware)
     responses: {
-      200: z.object({ 
-        transcript: z.string(),
-        analysis: analysisResponseSchema
-      }),
+      200: z.object({ transcript: z.string() }),
       400: errorSchemas.validation,
+      500: errorSchemas.internal,
+    },
+  },
+  chat: {
+    method: 'POST' as const,
+    path: '/api/chat',
+    input: z.object({
+      message: z.string(),
+      history: z.array(z.object({ role: z.enum(['user', 'assistant']), content: z.string() })),
+      context: z.any()
+    }),
+    responses: {
+      200: z.object({ message: z.string(), updatedAnalysis: analysisResponseSchema.optional() }),
       500: errorSchemas.internal,
     },
   },

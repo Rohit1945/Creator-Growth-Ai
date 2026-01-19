@@ -141,41 +141,7 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Could not transcribe audio. The video might be silent or too short." });
       }
 
-      // Perform analysis immediately
-      console.log("Analyzing transcript...");
-      const prompt = `
-        Act as a professional YouTube growth strategist. Analyze the following video content:
-        
-        Platform: YouTube
-        Niche: General
-        Channel Size: Small
-        Video Type: Long
-        Idea/Script/Transcript: ${transcript}
-
-        Return a JSON object with the following fields:
-        - titles: 3 high-CTR titles (optimized for CTR, not clickbait)
-        - description: SEO-optimized description (first 2 lines as hook)
-        - hashtags: array of relevant hashtags (e.g. ["#tag1", "#tag2"])
-        - tags: array of relevant tags (e.g. ["tag1", "tag2"])
-        - performancePrediction: object with { potential: "Low" | "Medium" | "High", confidenceScore: number (0-100), reason: string (short explanation) }
-        - nextVideoIdeas: array of 2 objects with { idea: string, reason: string }
-
-        Do NOT exaggerate views or guarantee virality. Use range-based prediction.
-        Ensure the response is valid JSON and matches the required structure exactly.
-      `;
-
-      const aiResponse = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [{ role: "user", content: prompt }],
-        response_format: { type: "json_object" },
-      });
-
-      const content = aiResponse.choices[0].message.content;
-      if (!content) throw new Error("No response from AI");
-
-      const analysis = JSON.parse(content);
-      console.log("Analysis complete.");
-      res.json({ transcript, analysis });
+      res.json({ transcript });
     } catch (err: any) {
       console.error("Upload error details:", err);
       res.status(500).json({ message: err.message || "Failed to process video" });
@@ -233,6 +199,44 @@ export async function registerRoutes(
         });
       }
       res.status(500).json({ message: "Failed to analyze video" });
+    }
+  });
+
+  app.post("/api/chat", async (req, res) => {
+    try {
+      const { message, history, context } = req.body;
+      
+      const prompt = `
+        You are an expert YouTube content consultant. 
+        The user has the following video analysis context:
+        ${JSON.stringify(context)}
+
+        User request: "${message}"
+
+        Provide a helpful response to refine the strategy. 
+        If the user asks for changes to the titles, description, or tags, provide an updated full JSON analysis object inside the "updatedAnalysis" field.
+        
+        Return a JSON with:
+        - message: your text response
+        - updatedAnalysis: (optional) full JSON analysis object if changes were made
+      `;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: "You are a helpful YouTube strategy assistant." },
+          ...history.map((h: any) => ({ role: h.role, content: h.content })),
+          { role: "user", content: prompt }
+        ],
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0].message.content;
+      if (!content) throw new Error("No response from AI");
+      res.json(JSON.parse(content));
+    } catch (err) {
+      console.error("Chat error:", err);
+      res.status(500).json({ message: "Failed to process chat" });
     }
   });
 
