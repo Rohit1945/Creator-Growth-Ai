@@ -117,6 +117,7 @@ export default function Home() {
   const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant', content: string }[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [isChatting, setIsChatting] = useState(false);
+  const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { mutate, isPending, data: queryResult, error } = useAnalyzeVideo();
@@ -189,6 +190,10 @@ export default function Home() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Create preview URL
+    const url = URL.createObjectURL(file);
+    setUploadedVideoUrl(url);
+
     // Estimate processing time: 20s base + 4s per MB
     const mb = file.size / (1024 * 1024);
     const est = Math.ceil(20 + (mb * 4));
@@ -238,6 +243,15 @@ export default function Home() {
   };
 
   const onSubmit = (data: AnalysisRequest) => {
+    if (!data.idea?.trim() && !data.transcript?.trim() && !data.youtubeUrl?.trim()) {
+      toast({
+        title: "Input required",
+        description: "Please provide a video idea, script, YouTube URL, or upload a video.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setHasResult(false);
     setLocalResult(null);
     setUploadState("idle");
@@ -438,6 +452,16 @@ export default function Home() {
                        uploadState === "analyzing" ? "Analyzing..." : 
                        "Upload .mp4 or .mov"}
                     </button>
+                    
+                    {uploadedVideoUrl && (
+                      <div className="mt-4 rounded-xl overflow-hidden border border-white/10 aspect-video bg-black/40">
+                        <video 
+                          src={uploadedVideoUrl} 
+                          controls 
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 
