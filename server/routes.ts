@@ -175,6 +175,19 @@ export async function registerRoutes(
 
       const analysis = JSON.parse(content);
       console.log("Analysis complete.");
+
+      // Save to history
+      await storage.saveAnalysis({
+        platform: "YouTube",
+        niche: "General",
+        channelSize: "Small",
+        videoType: "Long",
+        idea: null,
+        transcript: transcript,
+        youtubeUrl: null,
+        analysis: analysis
+      }).catch(console.error);
+
       res.json({ transcript, analysis });
     } catch (err: any) {
       console.error("Upload error details:", err);
@@ -223,6 +236,19 @@ export async function registerRoutes(
       }
 
       const parsedResult = JSON.parse(content);
+      
+      // Save to history
+      await storage.saveAnalysis({
+        platform: input.platform,
+        niche: input.niche,
+        channelSize: input.channelSize,
+        videoType: input.videoType,
+        idea: input.idea || null,
+        transcript: input.transcript || null,
+        youtubeUrl: input.youtubeUrl || null,
+        analysis: parsedResult
+      }).catch(console.error);
+
       res.json(parsedResult);
     } catch (err) {
       console.error("Analysis error:", err);
@@ -233,6 +259,15 @@ export async function registerRoutes(
         });
       }
       res.status(500).json({ message: "Failed to analyze video" });
+    }
+  });
+
+  app.get("/api/history", async (_req, res) => {
+    try {
+      const history = await storage.getAnalysisHistory();
+      res.json(history);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to fetch history" });
     }
   });
 

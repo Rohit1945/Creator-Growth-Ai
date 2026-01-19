@@ -33,6 +33,22 @@ export const viewers = pgTable("viewers", {
   ipHash: text("ip_hash").notNull().unique(),
 });
 
+export const videoAnalyses = pgTable("video_analyses", {
+  id: serial("id").primaryKey(),
+  platform: text("platform").notNull(),
+  niche: text("niche").notNull(),
+  channelSize: text("channel_size").notNull(),
+  videoType: text("video_type").notNull(),
+  idea: text("idea"),
+  transcript: text("transcript"),
+  youtubeUrl: text("youtube_url"),
+  analysis: jsonb("analysis").notNull(),
+});
+
+export const insertAnalysisSchema = createInsertSchema(videoAnalyses).omit({ id: true });
+export type InsertAnalysis = z.infer<typeof insertAnalysisSchema>;
+export type VideoAnalysis = typeof videoAnalyses.$inferSelect;
+
 export type AnalysisRequest = z.infer<typeof analysisRequestSchema>;
 export type AnalysisResponse = z.infer<typeof analysisResponseSchema>;
 export type Viewer = typeof viewers.$inferSelect;

@@ -20,7 +20,9 @@ import {
   Clock,
   Users,
   MessageSquare,
-  Send
+  Send,
+  History,
+  RotateCcw
 } from "lucide-react";
 
 import { useAnalyzeVideo } from "@/hooks/use-analyze";
@@ -118,6 +120,7 @@ export default function Home() {
   const [chatInput, setChatInput] = useState("");
   const [isChatting, setIsChatting] = useState(false);
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { mutate, isPending, data: queryResult, error } = useAnalyzeVideo();
@@ -126,7 +129,52 @@ export default function Home() {
     queryKey: ["/api/viewers"],
   });
 
+  const { data: historyData, refetch: refetchHistory } = useQuery<any[]>({
+    queryKey: ["/api/history"],
+  });
+
   const viewerCount = viewerData?.count;
+
+  const handleReset = () => {
+    setHasResult(false);
+    setLocalResult(null);
+    setUploadState("idle");
+    setEstimatedTime(0);
+    setChatMessages([]);
+    setChatInput("");
+    setUploadedVideoUrl(null);
+    form.reset({
+      platform: "YouTube",
+      niche: "Tech",
+      channelSize: "Small",
+      videoType: "Long",
+      idea: "",
+      youtubeUrl: "",
+      transcript: "",
+    });
+    toast({
+      title: "Reset complete",
+      description: "Ready for a new analysis.",
+    });
+  };
+
+  const handleSelectHistory = (item: any) => {
+    setHasResult(true);
+    setLocalResult(item.analysis);
+    form.reset({
+      platform: item.platform,
+      niche: item.niche,
+      channelSize: item.channelSize,
+      videoType: item.videoType,
+      idea: item.idea || "",
+      youtubeUrl: item.youtubeUrl || "",
+      transcript: item.transcript || "",
+    });
+    setShowHistory(false);
+    setTimeout(() => {
+      document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
 
   const result = localResult || queryResult;
   const isGlobalPending = isPending || uploadState === "transcribing" || uploadState === "analyzing";
@@ -262,6 +310,7 @@ export default function Home() {
         setLocalResult(res);
         setUploadState("done");
         setEstimatedTime(0);
+        refetchHistory();
         // Smooth scroll to results on mobile
         setTimeout(() => {
           document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' });
@@ -320,9 +369,18 @@ export default function Home() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16 space-y-4"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-muted-foreground mb-4 backdrop-blur-sm">
-            <Sparkles className="w-4 h-4 text-primary" />
-            <span>AI-Powered Content Strategy</span>
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-muted-foreground backdrop-blur-sm">
+              <Sparkles className="w-4 h-4 text-primary" />
+              <span>AI-Powered Content Strategy</span>
+            </div>
+            <button
+              onClick={() => setShowHistory(true)}
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-muted-foreground hover:bg-white/10 transition-colors backdrop-blur-sm"
+            >
+              <History className="w-4 h-4 text-accent" />
+              <span>History</span>
+            </button>
           </div>
           <h1 className="text-5xl md:text-7xl font-display font-bold tracking-tight">
             Creator Growth <span className="text-gradient">AI</span>
@@ -354,6 +412,22 @@ export default function Home() {
               </h2>
 
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-2xl font-display font-bold flex items-center gap-2">
+                    <Zap className="w-6 h-6 text-accent" />
+                    Video Details
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-muted-foreground transition-all flex items-center gap-2 text-xs"
+                    title="Reset all fields"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    Reset
+                  </button>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-muted-foreground ml-1">Platform</label>

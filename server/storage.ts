@@ -1,10 +1,12 @@
 import { db } from "./db";
-import { viewers, type Viewer } from "@shared/schema";
-import { eq, sql } from "drizzle-orm";
+import { viewers, videoAnalyses, type Viewer, type VideoAnalysis, type InsertAnalysis } from "@shared/schema";
+import { eq, sql, desc } from "drizzle-orm";
 
 export interface IStorage {
   getViewerCount(): Promise<number>;
   recordViewer(ipHash: string): Promise<void>;
+  saveAnalysis(analysis: InsertAnalysis): Promise<VideoAnalysis>;
+  getAnalysisHistory(): Promise<VideoAnalysis[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -15,6 +17,15 @@ export class DatabaseStorage implements IStorage {
 
   async recordViewer(ipHash: string): Promise<void> {
     await db.insert(viewers).values({ ipHash }).onConflictDoNothing();
+  }
+
+  async saveAnalysis(analysis: InsertAnalysis): Promise<VideoAnalysis> {
+    const [result] = await db.insert(videoAnalyses).values(analysis).returning();
+    return result;
+  }
+
+  async getAnalysisHistory(): Promise<VideoAnalysis[]> {
+    return await db.select().from(videoAnalyses).orderBy(desc(videoAnalyses.id));
   }
 }
 
