@@ -15,7 +15,12 @@ const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
-const upload = multer({ dest: os.tmpdir() });
+const upload = multer({ 
+  dest: os.tmpdir(),
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB
+  }
+});
 
 async function extractAudio(videoPath: string): Promise<string> {
   const audioPath = videoPath + ".mp3";
@@ -77,33 +82,50 @@ export async function registerRoutes(
     }
   });
 
-  app.post(api.uploadVideo.path, upload.single("video"), async (req: any, res) => {
+  app.post(api.uploadVideo.path, (req, res, next) => {
+    upload.single("video")(req, res, (err) => {
+      if (err instanceof multer.MulterError) {
+        return res.status(400).json({ message: `Upload error: ${err.message}` });
+      } else if (err) {
+        return res.status(500).json({ message: "Internal server error during upload" });
+      }
+      next();
+    });
+  }, async (req: any, res) => {
     let videoPath: string | undefined;
     let audioPath: string | undefined;
     try {
+      console.log("Processing video upload...");
       if (!req.file) return res.status(400).json({ message: "No video file uploaded" });
       
       const fileType = req.file.mimetype;
+      console.log("File type:", fileType);
       if (!fileType.includes("mp4") && !fileType.includes("quicktime") && !fileType.includes("video")) {
         return res.status(400).json({ message: "Unsupported file type. Please upload .mp4 or .mov" });
       }
 
       videoPath = req.file.path as string;
+      console.log("Extracting audio from:", videoPath);
       audioPath = await extractAudio(videoPath);
+      
+      console.log("Reading audio file...");
       const audioFile = await fs.readFile(audioPath);
       const file = await toFile(audioFile, "audio.mp3");
 
+      console.log("Transcribing with OpenAI...");
       const transcription = await openai.audio.transcriptions.create({
         file,
         model: "gpt-4o-mini-transcribe",
       });
 
       const transcript = transcription.text;
+      console.log("Transcript length:", transcript?.length);
       if (!transcript || transcript.trim().length < 5) {
         return res.status(400).json({ message: "Could not transcribe audio. The video might be silent or too short." });
       }
 
       // Perform analysis immediately
+      console.log("Analyzing transcript...");
       const prompt = `
         Act as a professional YouTube growth strategist. Analyze the following video content:
         
@@ -135,10 +157,11 @@ export async function registerRoutes(
       if (!content) throw new Error("No response from AI");
 
       const analysis = JSON.parse(content);
+      console.log("Analysis complete.");
       res.json({ transcript, analysis });
-    } catch (err) {
-      console.error("Upload error:", err);
-      res.status(500).json({ message: "Failed to process video" });
+    } catch (err: any) {
+      console.error("Upload error details:", err);
+      res.status(500).json({ message: err.message || "Failed to process video" });
     } finally {
       if (videoPath) await fs.unlink(videoPath).catch(() => {});
       if (audioPath) await fs.unlink(audioPath).catch(() => {});
