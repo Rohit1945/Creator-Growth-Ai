@@ -18,7 +18,7 @@ const openai = new OpenAI({
 const upload = multer({ 
   dest: os.tmpdir(),
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB
+    fileSize: 1024 * 1024 * 1024, // 1GB
   }
 });
 
