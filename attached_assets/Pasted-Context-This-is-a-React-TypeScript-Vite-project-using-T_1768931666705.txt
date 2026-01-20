@@ -1,0 +1,131 @@
+Context:
+This is a React + TypeScript + Vite project using Tailwind CSS.
+The project already has routing (react-router-dom) and pages structure under src/pages.
+I do NOT want to use any premium or paid Replit features, libraries, or templates.
+
+TASKS TO DO (VERY IMPORTANT):
+
+REMOVE premium dependency
+
+Identify and remove any premium-gated components or services related to:
+
+Authentication
+
+User stats
+
+History
+
+Replace them with custom-built free alternatives
+
+AUTHENTICATION (FREE)
+
+Implement authentication using Firebase Authentication (free tier)
+
+Features required:
+
+Email + Password Sign Up
+
+Email + Password Login
+
+Logout
+
+Create these pages:
+
+src/pages/Login.tsx
+
+src/pages/Signup.tsx
+
+Store auth state globally using React Context
+
+Protect private routes (redirect to /login if user not logged in)
+
+USER DASHBOARD (NO PREMIUM)
+
+Create a page: src/pages/Dashboard.tsx
+
+Dashboard should show:
+
+Logged-in user email
+
+Account creation date
+
+Total analyses performed
+
+HISTORY FEATURE (FREE)
+
+Store user analysis history using Firebase Firestore (free tier):
+
+analyzed link / username
+
+platform (YouTube / Instagram / Website)
+
+date & time
+
+Create page: src/pages/History.tsx
+
+Fetch and display history only for the logged-in user
+
+ANALYZE FEATURE (SOCIALBLADE-LIKE MVP)
+
+Create page: src/pages/Analyze.tsx
+
+Input:
+
+Channel link OR username
+
+Detect platform automatically:
+
+YouTube
+
+Instagram
+
+Website
+
+For now:
+
+Save input to history
+
+Show detected platform
+
+Show placeholder analytics text (API integration later)
+
+NAVBAR (FREE & SIMPLE)
+
+Create reusable Navbar.tsx
+
+Show links based on auth state:
+
+Logged out: Home | Login | Signup
+
+Logged in: Home | Analyze | Dashboard | History | Logout
+
+ROUTING
+
+Update App.tsx to include routes:
+
+/
+
+/login
+
+/signup
+
+/analyze (protected)
+
+/dashboard (protected)
+
+/history (protected)
+
+NO PREMIUM / NO PAID UI
+
+Do NOT use:
+
+Replit premium auth
+
+Paid UI kits
+
+Subscription-based analytics
+
+Use plain React, Firebase, Tailwind
+
+GOAL:
+Convert this project into a fully free, production-ready MVP that does NOT depend on any Replit premium services and supports authentication, user stats, history, and analysis pages.
