@@ -491,13 +491,6 @@ export default function Home() {
               <Sparkles className="w-4 h-4 text-primary" />
               <span>AI-Powered Content Strategy</span>
             </div>
-            <button
-              onClick={() => setShowHistory(true)}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-muted-foreground hover:bg-white/10 transition-colors backdrop-blur-sm"
-            >
-              <History className="w-4 h-4 text-accent" />
-              <span>History</span>
-            </button>
           </div>
           <h1 className="text-5xl md:text-7xl font-display font-bold tracking-tight">
             Creator Growth <span className="text-gradient">AI</span>
