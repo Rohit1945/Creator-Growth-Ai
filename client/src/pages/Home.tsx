@@ -22,7 +22,12 @@ import {
   MessageSquare,
   Send,
   History,
-  RotateCcw
+  RotateCcw,
+  LogIn,
+  UserPlus,
+  LogOut,
+  Menu,
+  X
 } from "lucide-react";
 
 import { useAnalyzeVideo } from "@/hooks/use-analyze";
@@ -31,6 +36,8 @@ import { ResultCard } from "@/components/ResultCard";
 import { api, buildUrl } from "@shared/routes";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/lib/AuthContext";
+import { useLocation } from "wouter";
 
 // Platform icons map
 const PlatformIcons = {
@@ -111,6 +118,8 @@ function Footer() {
 }
 
 export default function Home() {
+  const { user, logout } = useAuth();
+  const [, setLocation] = useLocation();
   const [hasResult, setHasResult] = useState(false);
   const [isFetchingYoutube, setIsFetchingYoutube] = useState(false);
   const [uploadState, setUploadState] = useState<"idle" | "transcribing" | "analyzing" | "done">("idle");
@@ -121,6 +130,7 @@ export default function Home() {
   const [isChatting, setIsChatting] = useState(false);
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { mutate, isPending, data: queryResult, error } = useAnalyzeVideo();
@@ -355,6 +365,113 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground font-body overflow-x-hidden selection:bg-primary/20">
+      {/* Sidebar Overlay */}
+      <AnimatePresence>
+        {showSidebar && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowSidebar(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150]"
+            />
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              className="fixed left-0 top-0 bottom-0 w-72 bg-background/95 border-r border-white/10 z-[151] p-6 shadow-2xl backdrop-blur-xl"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-xl font-display font-bold">Navigation</h2>
+                <button onClick={() => setShowSidebar(false)} className="p-2 hover:bg-white/5 rounded-full">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="space-y-4">
+                {user ? (
+                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10 mb-6">
+                    <p className="text-xs text-muted-foreground mb-1">Signed in as</p>
+                    <p className="text-sm font-medium truncate">{user.email}</p>
+                  </div>
+                ) : null}
+                <button
+                  onClick={() => { setShowHistory(true); setShowSidebar(false); }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-sm font-medium"
+                >
+                  <History className="w-4 h-4 text-accent" />
+                  History
+                </button>
+                {user ? (
+                  <button
+                    onClick={() => logout()}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-destructive/10 text-destructive transition-colors text-sm font-medium mt-auto"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Logout
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setLocation("/login")}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-sm font-medium"
+                    >
+                      <LogIn className="w-4 h-4 text-primary" />
+                      Login
+                    </button>
+                    <button
+                      onClick={() => setLocation("/signup")}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-sm font-medium"
+                    >
+                      <UserPlus className="w-4 h-4 text-primary" />
+                      Sign Up
+                    </button>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Auth Buttons Top-Right */}
+      <div className="fixed top-6 right-6 z-50 flex gap-3">
+        {!user ? (
+          <>
+            <button
+              onClick={() => setLocation("/login")}
+              className="px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-sm font-medium backdrop-blur-md flex items-center gap-2"
+            >
+              <LogIn className="w-4 h-4" />
+              Login
+            </button>
+            <button
+              onClick={() => setLocation("/signup")}
+              className="px-4 py-2 rounded-full bg-primary text-white hover:opacity-90 transition-all text-sm font-medium shadow-lg shadow-primary/20 flex items-center gap-2"
+            >
+              <UserPlus className="w-4 h-4" />
+              Sign Up
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={() => logout()}
+            className="px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-destructive/10 hover:text-destructive transition-all text-sm font-medium backdrop-blur-md flex items-center gap-2"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </button>
+        )}
+      </div>
+
+      {/* Sidebar Toggle Button */}
+      <button
+        onClick={() => setShowSidebar(true)}
+        className="fixed top-6 left-6 z-50 p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all backdrop-blur-md"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+
       {/* Background decoration */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px]" />
