@@ -406,11 +406,6 @@ export default function Home() {
             className="lg:col-span-5 space-y-8"
           >
             <div className="glass-card rounded-3xl p-8 sticky top-8">
-              <h2 className="text-2xl font-display font-bold mb-6 flex items-center gap-2">
-                <Zap className="w-6 h-6 text-accent" />
-                Video Details
-              </h2>
-
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="flex items-center justify-between mb-2">
                   <h2 className="text-2xl font-display font-bold flex items-center gap-2">
