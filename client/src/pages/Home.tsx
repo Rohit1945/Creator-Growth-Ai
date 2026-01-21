@@ -667,50 +667,58 @@ export default function Home() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground ml-1">Upload Video (Optional)</label>
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileUpload}
-                      accept=".mp4,.mov"
-                      className="hidden"
+                    <label className="text-sm font-medium text-muted-foreground ml-1">Video Idea or Script</label>
+                    <textarea
+                      {...form.register("idea")}
+                      placeholder="Describe your video idea, script, or main topic here..."
+                      className="w-full px-4 py-3 rounded-xl glass-input min-h-[160px] resize-none outline-none focus:ring-2"
                     />
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploadState !== "idle"}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-white/10 hover:border-primary/30 hover:bg-white/5 transition-all text-sm text-muted-foreground"
-                    >
-                      <Upload className="w-4 h-4" />
-                      {uploadState === "transcribing" ? "Transcribing..." : 
-                       uploadState === "analyzing" ? "Analyzing..." : 
-                       "Upload .mp4 or .mov"}
-                    </button>
-                    
-                    {uploadedVideoUrl && (
-                      <div className="mt-4 rounded-xl overflow-hidden border border-white/10 aspect-video bg-black/40">
-                        <video 
-                          src={uploadedVideoUrl} 
-                          controls 
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
+                    {form.formState.errors.idea && (
+                      <p className="text-sm text-destructive flex items-center gap-1 mt-1 px-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {form.formState.errors.idea.message}
+                      </p>
                     )}
                   </div>
                 </div>
 
+                <div className="relative py-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-white/5"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground font-medium">Or upload video</span>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground ml-1">Video Idea or Script</label>
-                  <textarea
-                    {...form.register("idea")}
-                    placeholder="Describe your video idea, script, or main topic here..."
-                    className="w-full px-4 py-3 rounded-xl glass-input min-h-[160px] resize-none outline-none focus:ring-2"
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    accept=".mp4,.mov"
+                    className="hidden"
                   />
-                  {form.formState.errors.idea && (
-                    <p className="text-sm text-destructive flex items-center gap-1 mt-1 px-1">
-                      <AlertCircle className="w-3 h-3" />
-                      {form.formState.errors.idea.message}
-                    </p>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadState !== "idle"}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-white/10 hover:border-primary/30 hover:bg-white/5 transition-all text-sm text-muted-foreground"
+                  >
+                    <Upload className="w-4 h-4" />
+                    {uploadState === "transcribing" ? "Transcribing..." : 
+                     uploadState === "analyzing" ? "Analyzing..." : 
+                     "Upload .mp4 or .mov"}
+                  </button>
+                  
+                  {uploadedVideoUrl && (
+                    <div className="mt-4 rounded-xl overflow-hidden border border-white/10 aspect-video bg-black/40">
+                      <video 
+                        src={uploadedVideoUrl} 
+                        controls 
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
                   )}
                 </div>
 
