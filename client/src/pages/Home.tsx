@@ -343,11 +343,6 @@ export default function Home() {
       return;
     }
 
-    if (youtubeUrl) {
-      handleYoutubeFetch();
-      return;
-    }
-
     setHasResult(false);
     setLocalResult(null);
     setUploadState("idle");
