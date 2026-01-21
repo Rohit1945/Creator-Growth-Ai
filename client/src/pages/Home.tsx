@@ -27,7 +27,9 @@ import {
   UserPlus,
   LogOut,
   Menu,
-  X
+  X,
+  Copy,
+  Check
 } from "lucide-react";
 
 import { useAnalyzeVideo } from "@/hooks/use-analyze";
@@ -40,6 +42,30 @@ import { useAuth } from "@/lib/AuthContext";
 import { useLocation } from "wouter";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="p-1.5 rounded-md hover:bg-white/10 transition-colors text-muted-foreground hover:text-primary"
+      title="Copy to clipboard"
+    >
+      {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+    </button>
+  );
+}
 
 // Platform icons map
 const PlatformIcons = {
@@ -850,9 +876,12 @@ export default function Home() {
                   <ResultCard title="High-CTR Titles" icon={FileText} delay={0.1}>
                     <ul className="space-y-3">
                       {result.titles.map((title: string, i: number) => (
-                        <li key={i} className="p-3 rounded-xl bg-background/50 border border-white/5 hover:border-primary/30 transition-colors flex gap-3 group/item">
-                          <span className="text-primary/50 font-mono text-sm pt-0.5">0{i+1}</span>
-                          <span className="text-sm font-medium group-hover/item:text-primary transition-colors">{title}</span>
+                        <li key={i} className="p-3 rounded-xl bg-background/50 border border-white/5 hover:border-primary/30 transition-colors flex items-center justify-between gap-3 group/item">
+                          <div className="flex gap-3">
+                            <span className="text-primary/50 font-mono text-sm pt-0.5">0{i+1}</span>
+                            <span className="text-sm font-medium group-hover/item:text-primary transition-colors">{title}</span>
+                          </div>
+                          <CopyButton text={title} />
                         </li>
                       ))}
                     </ul>
@@ -860,30 +889,45 @@ export default function Home() {
 
                   {/* Description */}
                   <ResultCard title="Optimized Description" icon={Lightbulb} delay={0.2}>
-                    <div className="p-4 rounded-xl bg-background/50 border border-white/5 text-sm text-muted-foreground whitespace-pre-wrap font-mono leading-relaxed">
-                      {result.description}
+                    <div className="relative group">
+                      <div className="p-4 rounded-xl bg-background/50 border border-white/5 text-sm text-muted-foreground whitespace-pre-wrap font-mono leading-relaxed pr-10">
+                        {result.description}
+                      </div>
+                      <div className="absolute top-2 right-2">
+                        <CopyButton text={result.description} />
+                      </div>
                     </div>
                   </ResultCard>
 
                   {/* Tags & Hashtags Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <ResultCard title="Hashtags" icon={Hash} delay={0.3}>
-                      <div className="flex flex-wrap gap-2">
-                        {result.hashtags.map((tag: string, i: number) => (
-                          <span key={i} className="px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-400 text-xs font-medium border border-blue-500/10 hover:border-blue-500/30 transition-colors">
-                            {tag}
-                          </span>
-                        ))}
+                      <div className="relative group">
+                        <div className="flex flex-wrap gap-2 pr-8">
+                          {result.hashtags.map((tag: string, i: number) => (
+                            <span key={i} className="px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-400 text-xs font-medium border border-blue-500/10 hover:border-blue-500/30 transition-colors">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="absolute top-0 right-0">
+                          <CopyButton text={result.hashtags.join(" ")} />
+                        </div>
                       </div>
                     </ResultCard>
 
                     <ResultCard title="SEO Tags" icon={Tag} delay={0.4}>
-                      <div className="flex flex-wrap gap-2">
-                        {result.tags.map((tag: string, i: number) => (
-                          <span key={i} className="px-2.5 py-1 rounded-md bg-white/5 text-muted-foreground text-xs font-medium border border-white/5 hover:border-white/20 transition-colors">
-                            {tag}
-                          </span>
-                        ))}
+                      <div className="relative group">
+                        <div className="flex flex-wrap gap-2 pr-8">
+                          {result.tags.map((tag: string, i: number) => (
+                            <span key={i} className="px-2.5 py-1 rounded-md bg-white/5 text-muted-foreground text-xs font-medium border border-white/5 hover:border-white/20 transition-colors">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="absolute top-0 right-0">
+                          <CopyButton text={result.tags.join(", ")} />
+                        </div>
                       </div>
                     </ResultCard>
                   </div>
