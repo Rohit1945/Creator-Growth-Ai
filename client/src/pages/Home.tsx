@@ -142,7 +142,34 @@ export default function Home() {
   });
 
   const { data: historyData, refetch: refetchHistory } = useQuery<any[]>({
-    queryKey: ["/api/history"],
+    queryKey: user ? ["firestore-history", user.uid] : ["/api/history"],
+    queryFn: async () => {
+      if (!user) {
+        const res = await fetch("/api/history");
+        if (!res.ok) return [];
+        return res.json();
+      }
+      
+      const { query, collection, where, orderBy, getDocs } = await import("firebase/firestore");
+      const q = query(
+        collection(db, "analysisHistory"),
+        where("uid", "==", user.uid),
+        orderBy("createdAt", "desc")
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        // Map Firestore fields to the UI's expected format if they differ
+        analysis: {
+          titles: doc.data().videoTitle ? [doc.data().videoTitle] : [],
+          tags: doc.data().generatedTags || [],
+          hashtags: doc.data().hashtags || [],
+          description: doc.data().description || "",
+          performancePrediction: doc.data().performancePrediction || null
+        }
+      }));
+    }
   });
 
   const viewerCount = viewerData?.count;
