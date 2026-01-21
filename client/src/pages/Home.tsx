@@ -330,12 +330,21 @@ export default function Home() {
   };
 
   const onSubmit = (data: AnalysisRequest) => {
-    if (!data.idea?.trim() && !data.transcript?.trim() && !data.youtubeUrl?.trim()) {
+    const youtubeUrl = data.youtubeUrl?.trim();
+    const idea = data.idea?.trim();
+    const transcript = data.transcript?.trim();
+
+    if (!youtubeUrl && !idea && !transcript) {
       toast({
         title: "Input required",
         description: "Please provide a video idea, script, YouTube URL, or upload a video.",
         variant: "destructive"
       });
+      return;
+    }
+
+    if (youtubeUrl) {
+      handleYoutubeFetch();
       return;
     }
 
