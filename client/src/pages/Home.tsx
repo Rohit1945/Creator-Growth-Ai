@@ -38,6 +38,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/AuthContext";
 import { useLocation } from "wouter";
+import { db } from "@/lib/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 // Platform icons map
 const PlatformIcons = {
@@ -315,12 +317,34 @@ export default function Home() {
     setUploadState("idle");
     setEstimatedTime(25); // Default estimate for text/youtube analysis
     mutate(data, {
-      onSuccess: (res) => {
+      onSuccess: async (res) => {
         setHasResult(true);
         setLocalResult(res);
         setUploadState("done");
         setEstimatedTime(0);
         refetchHistory();
+
+        // Save to Firestore if user is logged in
+        if (user) {
+          try {
+            await addDoc(collection(db, "analysisHistory"), {
+              uid: user.uid,
+              videoTitle: res.titles?.[0] || data.idea || "Untitled Analysis",
+              videoUrl: data.youtubeUrl || data.idea || "Uploaded Video",
+              generatedTags: res.tags || [],
+              hashtags: res.hashtags || [],
+              description: res.description || "",
+              performancePrediction: res.performancePrediction || null,
+              platform: data.platform,
+              niche: data.niche,
+              videoType: data.videoType,
+              createdAt: serverTimestamp(),
+            });
+          } catch (e) {
+            console.error("Error saving to Firestore:", e);
+          }
+        }
+
         // Smooth scroll to results on mobile
         setTimeout(() => {
           document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' });
