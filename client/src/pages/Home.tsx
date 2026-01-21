@@ -330,14 +330,13 @@ export default function Home() {
   };
 
   const onSubmit = (data: AnalysisRequest) => {
-    const youtubeUrl = data.youtubeUrl?.trim();
     const idea = data.idea?.trim();
     const transcript = data.transcript?.trim();
 
-    if (!youtubeUrl && !idea && !transcript) {
+    if (!idea && !transcript) {
       toast({
         title: "Input required",
-        description: "Please provide a video idea, script, YouTube URL, or upload a video.",
+        description: "Please provide a video idea or script to analyze.",
         variant: "destructive"
       });
       return;
@@ -346,7 +345,7 @@ export default function Home() {
     setHasResult(false);
     setLocalResult(null);
     setUploadState("idle");
-    setEstimatedTime(25); // Default estimate for text/youtube analysis
+    setEstimatedTime(25); // Default estimate for text analysis
     mutate(data, {
       onSuccess: async (res) => {
         setHasResult(true);
@@ -361,7 +360,7 @@ export default function Home() {
             await addDoc(collection(db, "analysisHistory"), {
               uid: user.uid,
               videoTitle: res.titles?.[0] || data.idea || "Untitled Analysis",
-              videoUrl: data.youtubeUrl || data.idea || "Uploaded Video",
+              videoUrl: data.idea || "Text-based Idea",
               generatedTags: res.tags || [],
               hashtags: res.hashtags || [],
               description: res.description || "",
