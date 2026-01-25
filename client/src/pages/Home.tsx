@@ -511,9 +511,9 @@ export default function Home() {
       </AnimatePresence>
 
       {/* Auth Buttons Top-Right */}
-      <div className="fixed top-6 right-6 z-50 flex gap-3">
+      <div className="fixed top-6 right-6 z-50 flex gap-3 sm:flex">
         {!user ? (
-          <>
+          <div className="hidden sm:flex gap-3">
             <button
               onClick={() => setLocation("/login")}
               className="px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-sm font-medium backdrop-blur-md flex items-center gap-2"
@@ -528,11 +528,11 @@ export default function Home() {
               <UserPlus className="w-4 h-4" />
               Sign Up
             </button>
-          </>
+          </div>
         ) : (
           <button
             onClick={() => logout()}
-            className="px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-destructive/10 hover:text-destructive transition-all text-sm font-medium backdrop-blur-md flex items-center gap-2"
+            className="hidden sm:flex px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-destructive/10 hover:text-destructive transition-all text-sm font-medium backdrop-blur-md items-center gap-2"
           >
             <LogOut className="w-4 h-4" />
             Logout
