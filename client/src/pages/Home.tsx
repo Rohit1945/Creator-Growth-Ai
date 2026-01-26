@@ -302,6 +302,7 @@ export default function Home() {
     // Create preview URL
     const url = URL.createObjectURL(file);
     setUploadedVideoUrl(url);
+    const [analysisType, setAnalysisType] = useState("idea");
 
     // Estimate processing time: 20s base + 4s per MB
     const mb = file.size / (1024 * 1024);
