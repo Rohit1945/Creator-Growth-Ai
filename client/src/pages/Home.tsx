@@ -151,6 +151,7 @@ export default function Home() {
   const [hasResult, setHasResult] = useState(false);
   const [isFetchingYoutube, setIsFetchingYoutube] = useState(false);
   const [uploadState, setUploadState] = useState<"idle" | "transcribing" | "analyzing" | "done">("idle");
+  const [analysisType, setAnalysisType] = useState<"idea" | "youtube">("idea");
   const [localResult, setLocalResult] = useState<any>(null);
   const [estimatedTime, setEstimatedTime] = useState(0);
   const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant', content: string }[]>([]);
@@ -355,11 +356,21 @@ export default function Home() {
   const onSubmit = (data: AnalysisRequest) => {
     const idea = data.idea?.trim();
     const transcript = data.transcript?.trim();
+    const youtubeUrl = data.youtubeUrl?.trim();
 
-    if (!idea && !transcript) {
+    if (analysisType === "idea" && !idea && !transcript) {
       toast({
         title: "Input required",
         description: "Please provide a video idea or script to analyze.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (analysisType === "youtube" && !youtubeUrl) {
+      toast({
+        title: "YouTube Link required",
+        description: "Please provide a YouTube link to analyze.",
         variant: "destructive"
       });
       return;
@@ -512,7 +523,7 @@ export default function Home() {
       </AnimatePresence>
 
       {/* Auth Buttons Top-Right */}
-      <div className="fixed top-6 right-6 z-50 flex gap-3 sm:flex">
+      <div className="fixed top-24 right-6 z-50 flex gap-3 sm:flex">
         {!user ? (
           <div className="hidden sm:flex gap-3">
             <button
@@ -544,7 +555,7 @@ export default function Home() {
       {/* Sidebar Toggle Button */}
       <button
         onClick={() => setShowSidebar(true)}
-        className="fixed top-6 left-6 z-50 p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all backdrop-blur-md"
+        className="fixed top-24 left-6 z-50 p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all backdrop-blur-md"
       >
         <Menu className="w-5 h-5" />
       </button>
@@ -682,6 +693,7 @@ export default function Home() {
 
                   <button
                     type="submit"
+                    onClick={() => setAnalysisType("idea")}
                     disabled={isGlobalPending || isFetchingYoutube}
                     className="w-full py-4 rounded-xl font-bold text-lg bg-gradient-to-r from-primary to-accent text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 active:shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all duration-200"
                   >
