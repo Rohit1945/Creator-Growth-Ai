@@ -290,7 +290,7 @@ export default function Home() {
         {
           ...form.getValues(),
           idea: combinedIdea,
-          youtubeUrl: "", // force text-only analysis
+          youtubeUrl: null, // force text-only analysis
         },
         {
           onSuccess: (result) => {
@@ -392,13 +392,16 @@ export default function Home() {
     }
 
     // 🔥 Force ignore YouTube when using text
-    data.youtubeUrl = "";
+    const analysisData = {
+      ...data,
+      youtubeUrl: null
+    };
 
     setHasResult(false);
     setLocalResult(null);
     setEstimatedTime(25);
 
-    mutate(data, {
+    mutate(analysisData, {
       onSuccess: async (res) => {
         setHasResult(true);
         setLocalResult(res);

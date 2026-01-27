@@ -8,7 +8,7 @@ export const analysisRequestSchema = z.object({
   channelSize: z.enum(["Small", "Medium", "Large"]),
   videoType: z.enum(["Short", "Long"]),
   idea: z.string().min(10, "Please provide a more detailed idea (at least 10 characters)").optional(),
-  youtubeUrl: z.string().url().optional(),
+  youtubeUrl: z.string().optional().nullable(),
   transcript: z.string().optional(),
 });
 
