@@ -263,33 +263,57 @@ export default function Home() {
     if (!url) return;
 
     setIsFetchingYoutube(true);
+    setHasResult(false);
+    setLocalResult(null);
+    setEstimatedTime(20);
+    setAnalysisType("youtube");
+
     try {
+      // 1. Fetch YouTube metadata
       const res = await fetch(api.fetchYoutubeVideo.path, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
       });
 
-      const data = await res.json();
-      
+      const ytData = await res.json();
       if (!res.ok) {
-        throw new Error(data.message || "Failed to fetch video details");
+        throw new Error(ytData.message || "Failed to fetch YouTube data");
       }
 
-      form.setValue("idea", `Title: ${data.title}\nDescription: ${data.description}\nTags: ${data.tags.join(", ")}\nChannel: ${data.channelTitle}`);
-      
-      toast({
-        title: "Success",
-        description: "YouTube video details imported! Review them and click Analyze.",
-      });
+      // 2. Inject fetched data into idea field
+      const combinedIdea = `Title: ${ytData.title}\nDescription: ${ytData.description}\nTags: ${ytData.tags.join(", ")}\nChannel: ${ytData.channelTitle}`;
+      form.setValue("idea", combinedIdea);
+
+      // 3. AUTO-START ANALYSIS
+      mutate(
+        {
+          ...form.getValues(),
+          idea: combinedIdea,
+          youtubeUrl: "", // force text-only analysis
+        },
+        {
+          onSuccess: (result) => {
+            setLocalResult(result);
+            setHasResult(true);
+            setEstimatedTime(0);
+
+            setTimeout(() => {
+              document
+                .getElementById("results-section")
+                ?.scrollIntoView({ behavior: "smooth" });
+            }, 200);
+          },
+          onError: () => {
+            setEstimatedTime(0);
+          },
+        }
+      );
     } catch (err: any) {
-      const isSetupError = err.message.includes("API key not configured");
       toast({
-        title: isSetupError ? "YouTube Setup Needed" : "Error",
+        title: "Error",
         variant: "destructive",
-        description: isSetupError 
-          ? "Please add your 'YOUTUBE_API_KEY' to the Secrets tab (padlock icon) in the sidebar."
-          : err.message || "Could not fetch YouTube video. Please check the URL.",
+        description: err.message || "YouTube fetch failed",
       });
     } finally {
       setIsFetchingYoutube(false);
@@ -303,7 +327,7 @@ export default function Home() {
     // Create preview URL
     const url = URL.createObjectURL(file);
     setUploadedVideoUrl(url);
-    const [analysisType, setAnalysisType] = useState("idea");
+    
 
     // Estimate processing time: 20s base + 4s per MB
     const mb = file.size / (1024 * 1024);
@@ -356,30 +380,24 @@ export default function Home() {
   const onSubmit = (data: AnalysisRequest) => {
     const idea = data.idea?.trim();
     const transcript = data.transcript?.trim();
-    const youtubeUrl = data.youtubeUrl?.trim();
 
-    if (analysisType === "idea" && !idea && !transcript) {
+    // 🔥 TEXT MODE ONLY
+    if (!idea && !transcript) {
       toast({
         title: "Input required",
-        description: "Please provide a video idea or script to analyze.",
-        variant: "destructive"
+        description: "Please write a video idea or script.",
+        variant: "destructive",
       });
       return;
     }
 
-    if (analysisType === "youtube" && !youtubeUrl) {
-      toast({
-        title: "YouTube Link required",
-        description: "Please provide a YouTube link to analyze.",
-        variant: "destructive"
-      });
-      return;
-    }
+    // 🔥 Force ignore YouTube when using text
+    data.youtubeUrl = "";
 
     setHasResult(false);
     setLocalResult(null);
-    setUploadState("idle");
-    setEstimatedTime(25); // Default estimate for text analysis
+    setEstimatedTime(25);
+
     mutate(data, {
       onSuccess: async (res) => {
         setHasResult(true);
@@ -388,13 +406,12 @@ export default function Home() {
         setEstimatedTime(0);
         refetchHistory();
 
-        // Save to Firestore if user is logged in
         if (user) {
           try {
             await addDoc(collection(db, "analysisHistory"), {
               uid: user.uid,
               videoTitle: res.titles?.[0] || data.idea || "Untitled Analysis",
-              videoUrl: data.idea || "Text-based Idea",
+              videoUrl: data.youtubeUrl || "Text-based Idea",
               generatedTags: res.tags || [],
               hashtags: res.hashtags || [],
               description: res.description || "",
@@ -409,16 +426,18 @@ export default function Home() {
           }
         }
 
-        // Smooth scroll to results on mobile
         setTimeout(() => {
-          document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' });
+          document
+            .getElementById("results-section")
+            ?.scrollIntoView({ behavior: "smooth" });
         }, 100);
       },
       onError: () => {
         setEstimatedTime(0);
-      }
+      },
     });
   };
+
 
   const handleChat = async () => {
     if (!chatInput.trim() || isChatting) return;
@@ -693,7 +712,6 @@ export default function Home() {
 
                   <button
                     type="submit"
-                    onClick={() => setAnalysisType("idea")}
                     disabled={isGlobalPending || isFetchingYoutube}
                     className="w-full py-4 rounded-xl font-bold text-lg bg-gradient-to-r from-primary to-accent text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 active:shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all duration-200"
                   >
