@@ -500,22 +500,48 @@ export default function Home() {
               </div>
               <div className="space-y-4">
                 {user ? (
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10 mb-6">
-                    <p className="text-xs text-muted-foreground mb-1">Signed in as</p>
-                    <p className="text-sm font-medium truncate">{user.email}</p>
-                  </div>
+                  <>
+                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 mb-2">
+                      <p className="text-xs text-muted-foreground mb-1">Signed in as</p>
+                      <p className="text-sm font-medium truncate">{user.email}</p>
+                      <p className="text-[10px] text-primary mt-1 uppercase tracking-wider font-bold">Free Plan</p>
+                    </div>
+                    
+                    <div className="py-2">
+                      <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-4 mb-3 flex items-center gap-2">
+                        <History className="w-3 h-3" />
+                        Past Works
+                      </h3>
+                      <div className="max-h-[300px] overflow-y-auto custom-scrollbar space-y-1 px-2">
+                        {historyData && historyData.length > 0 ? (
+                          historyData.map((item: any) => (
+                            <button
+                              key={item.id}
+                              onClick={() => handleSelectHistory(item)}
+                              className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/5 transition-colors group"
+                            >
+                              <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">
+                                {item.videoTitle || "Untitled Analysis"}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground/60">
+                                {item.createdAt?.seconds 
+                                  ? new Date(item.createdAt.seconds * 1000).toLocaleDateString() 
+                                  : "Recently"}
+                              </p>
+                            </button>
+                          ))
+                        ) : (
+                          <p className="text-xs text-muted-foreground/40 px-4 py-2 italic">No past works yet</p>
+                        )}
+                      </div>
+                    </div>
+                  </>
                 ) : null}
-                <button
-                  onClick={() => { setShowHistory(true); setShowSidebar(false); }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors text-sm font-medium"
-                >
-                  <History className="w-4 h-4 text-accent" />
-                  History
-                </button>
+                
                 {user ? (
                   <button
                     onClick={() => logout()}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-destructive/10 text-destructive transition-colors text-sm font-medium mt-auto"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-destructive/10 text-destructive transition-colors text-sm font-medium mt-4"
                   >
                     <LogOut className="w-4 h-4" />
                     Logout
