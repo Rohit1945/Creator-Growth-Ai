@@ -127,7 +127,7 @@ function Footer() {
           </p>
         </div>
         <div className="flex items-center justify-center gap-6">
-          <a href="#" className="p-2 rounded-full bg-white/5 border border-white/10 hover:border-primary/30 hover:bg-white/10 transition-all">
+          <a href="www.youtube.com/@RBDgaming18" className="p-2 rounded-full bg-white/5 border border-white/10 hover:border-primary/30 hover:bg-white/10 transition-all">
             <Youtube className="w-5 h-5 text-muted-foreground" />
           </a>
           <a href="https://www.instagram.com/creator.growthai?igsh=MW1qdmZnNXhkMnBzMA==" className="p-2 rounded-full bg-white/5 border border-white/10 hover:border-primary/30 hover:bg-white/10 transition-all">
@@ -331,7 +331,7 @@ export default function Home() {
 
     // Estimate processing time: 20s base + 4s per MB
     const mb = file.size / (1024 * 1024);
-    const est = Math.ceil(20 + (mb * 4));
+    const est = Math.ceil(5 + (mb * 0.5));
     setEstimatedTime(est);
 
     setUploadState("transcribing");
