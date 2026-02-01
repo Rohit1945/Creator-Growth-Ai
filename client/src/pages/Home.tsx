@@ -331,7 +331,7 @@ export default function Home() {
 
     // Estimate processing time: 20s base + 4s per MB
     const mb = file.size / (1024 * 1024);
-    const est = Math.ceil(5 + (mb * 0.5));
+    const est = Math.ceil(10 + (mb * 1));
     setEstimatedTime(est);
 
     setUploadState("transcribing");
