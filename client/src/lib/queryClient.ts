@@ -1,5 +1,9 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+
+// -----------------------------
+// Helper: throw error if API fails
+// -----------------------------
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
@@ -7,12 +11,21 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+
+// -----------------------------
+// MAIN API REQUEST FUNCTION
+// (All backend calls go through here)
+// -----------------------------
 export async function apiRequest(
   method: string,
   url: string,
-  data?: unknown | undefined,
+  data?: unknown
 ): Promise<Response> {
-  const res = await fetch(url, {
+
+  // 🔥 Your Render backend base URL
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+
+  const res = await fetch(BASE_URL + url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
@@ -20,27 +33,39 @@ export async function apiRequest(
   });
 
   await throwIfResNotOk(res);
+
   return res;
 }
 
+
+// -----------------------------
+// React Query helper for GET queries
+// -----------------------------
 type UnauthorizedBehavior = "returnNull" | "throw";
-export const getQueryFn: <T>(options: {
-  on401: UnauthorizedBehavior;
-}) => QueryFunction<T> =
-  ({ on401: unauthorizedBehavior }) =>
+
+export const getQueryFn =
+  <T>({ on401 }: { on401: UnauthorizedBehavior }): QueryFunction<T> =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
+
+    const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+
+    const res = await fetch(BASE_URL + (queryKey.join("/") as string), {
       credentials: "include",
     });
 
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
+    if (on401 === "returnNull" && res.status === 401) {
+      return null as T;
     }
 
     await throwIfResNotOk(res);
+
     return await res.json();
   };
 
+
+// -----------------------------
+// Global Query Client
+// -----------------------------
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
