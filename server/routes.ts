@@ -10,6 +10,8 @@ import { spawn } from "child_process";
 import path from "path";
 import os from "os";
 import crypto from "crypto";
+import cors from "cors";
+
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -34,11 +36,20 @@ async function extractAudio(videoPath: string): Promise<string> {
   });
 }
 
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
   // Record unique viewer on root access
+  app.use(cors({
+    origin: [
+      "https://creator-growth--rohitsharmafanp.replit.app",
+      "http://localhost:5173"
+    ],
+    credentials: true
+  }));
+
   app.get("/", async (req, res, next) => {
     const ip = req.ip || req.headers["x-forwarded-for"] || "unknown";
     const ipHash = crypto.createHash("sha256").update(String(ip)).digest("hex");
