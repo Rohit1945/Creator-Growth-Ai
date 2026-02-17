@@ -172,7 +172,7 @@ export default function Home() {
     queryKey: user ? ["firestore-history", user.uid] : ["/api/history"],
     queryFn: async () => {
       if (!user) {
-        const res = await fetch("/api/history");
+        const res = await fetch("api.history.path");
         if (!res.ok) return [];
         return res.json();
       }
@@ -249,7 +249,7 @@ export default function Home() {
   const handleCompare = async () => {
     setIsComparing(true);
     try {
-      const res = await fetch("/api/compare", {
+      const res = await fetch(api.compare, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -476,7 +476,7 @@ export default function Home() {
     setIsChatting(true);
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch(api.chat.path, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
