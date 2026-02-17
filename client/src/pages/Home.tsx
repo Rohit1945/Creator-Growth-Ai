@@ -242,6 +242,31 @@ export default function Home() {
     }, 100);
   };
 
+  const [compUrl, setCompUrl] = useState("");
+  const [benchmark, setBenchmark] = useState<any>(null);
+  const [isComparing, setIsComparing] = useState(false);
+
+  const handleCompare = async () => {
+    setIsComparing(true);
+    try {
+      const res = await fetch("/api/compare", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userVideo: result,
+          competitorUrl: compUrl
+        })
+      });
+      const data = await res.json();
+      setBenchmark(data);
+      toast({ title: "Benchmark Complete", description: "Competitor comparison generated." });
+    } catch (err) {
+      toast({ title: "Error", variant: "destructive", description: "Comparison failed." });
+    } finally {
+      setIsComparing(false);
+    }
+  };
+
   const result = localResult || queryResult;
   const isGlobalPending = isPending || uploadState === "transcribing" || uploadState === "analyzing";
 

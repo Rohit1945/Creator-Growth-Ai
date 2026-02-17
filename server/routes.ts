@@ -320,5 +320,61 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/compare", async (req, res) => {
+    try {
+      const { userVideo, competitorUrl } = req.body;
+      
+      // 1. Fetch competitor metadata if URL provided
+      let competitorData = null;
+      if (competitorUrl) {
+        const youtubeRegex = /(?:https?:\/\/)?(?:www\.|m\.)?youtu(?:be\.com\/(?:watch\?v=|embed\/|v\/|shorts\/|live\/)|.be\/)([a-zA-Z0-9_-]{11})/;
+        const match = competitorUrl.match(youtubeRegex);
+        const videoId = match ? match[1] : null;
+
+        if (videoId) {
+          const apiKey = process.env.YOUTUBE_API_KEY;
+          const apiUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoId}&key=${apiKey}`;
+          const response = await fetch(apiUrl);
+          const data = await response.json() as any;
+          if (data.items?.length) {
+            competitorData = {
+              title: data.items[0].snippet.title,
+              viewCount: data.items[0].statistics.viewCount,
+              likeCount: data.items[0].statistics.likeCount,
+              publishedAt: data.items[0].snippet.publishedAt
+            };
+          }
+        }
+      }
+
+      const prompt = `
+        Act as a YouTube performance analyst. Compare the following two videos:
+        
+        YOUR VIDEO:
+        ${JSON.stringify(userVideo)}
+        
+        COMPETITOR VIDEO:
+        ${competitorData ? JSON.stringify(competitorData) : "N/A (General niche benchmark)"}
+
+        Provide a benchmarking report in JSON:
+        - score: number (0-100)
+        - strength: string (what user did better)
+        - weakness: string (what competitor does better)
+        - recommendation: string (specific action to beat competitor)
+        - marketGap: string (unfilled need in this niche)
+      `;
+
+      const aiResponse = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+      });
+
+      res.json(JSON.parse(aiResponse.choices[0].message.content || "{}"));
+    } catch (err) {
+      res.status(500).json({ message: "Comparison failed" });
+    }
+  });
+
   return httpServer;
 }
