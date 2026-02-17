@@ -904,6 +904,68 @@ export default function Home() {
                   animate={{ opacity: 1 }}
                   className="grid grid-cols-1 gap-6"
                 >
+                  {/* Competitor Benchmark Section */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="glass-card rounded-3xl p-8 border border-primary/20 bg-primary/5"
+                  >
+                    <h3 className="text-xl font-bold flex items-center gap-2 mb-4">
+                      <TrendingUp className="w-5 h-5 text-primary" />
+                      Competitor Benchmark
+                    </h3>
+                    <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                      <input
+                        placeholder="Paste competitor YouTube URL..."
+                        value={compUrl}
+                        onChange={(e) => setCompUrl(e.target.value)}
+                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                      <button
+                        onClick={handleCompare}
+                        disabled={isComparing}
+                        className="px-6 py-2 bg-primary rounded-xl text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+                      >
+                        {isComparing ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white/20 border-t-white animate-spin rounded-full" />
+                            Analyzing...
+                          </>
+                        ) : "Compare Now"}
+                      </button>
+                    </div>
+
+                    {benchmark && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                          <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">Benchmark Score</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-3xl font-bold text-primary">{benchmark.score}/100</p>
+                            <div className="h-2 flex-1 bg-white/5 rounded-full overflow-hidden max-w-[100px]">
+                              <div className="h-full bg-primary" style={{ width: `${benchmark.score}%` }} />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                          <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">Market Gap</p>
+                          <p className="text-sm font-medium">{benchmark.marketGap}</p>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-green-500/10 border border-green-500/20">
+                          <p className="text-xs text-green-500 mb-1 font-bold uppercase">Your Strength</p>
+                          <p className="text-sm">{benchmark.strength}</p>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                          <p className="text-xs text-amber-500 mb-1 font-bold uppercase">Competitor Edge</p>
+                          <p className="text-sm">{benchmark.weakness}</p>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 md:col-span-2">
+                          <p className="text-xs text-primary mb-1 font-bold uppercase">Strategy to Win</p>
+                          <p className="text-sm font-medium">{benchmark.recommendation}</p>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+
                   {/* Performance Prediction */}
                   <ResultCard 
                     title="Performance Prediction" 
