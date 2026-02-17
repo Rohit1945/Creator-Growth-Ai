@@ -9,7 +9,9 @@ const httpServer = createServer(app);
 
 app.use(
   cors({
-    origin: true,
+    origin: [
+      "https://creator-growth--rohitsharmafanp.replit.app",
+    ],
     credentials: true,
   }),
 );
