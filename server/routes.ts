@@ -13,9 +13,11 @@ import crypto from "crypto";
 import cors from "cors";
 
 
+// Use OpenRouter via Replit AI Integrations for access to various models (Llama, Mistral, etc.)
+// This does not require your own API key and charges are billed to your credits.
 const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+  apiKey: process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_OPENROUTER_BASE_URL,
 });
 
 const upload = multer({ 
@@ -143,7 +145,7 @@ export async function registerRoutes(
       console.log("Transcribing with OpenAI...");
       const transcription = await openai.audio.transcriptions.create({
         file,
-        model: "gpt-4o-mini-transcribe",
+        model: "whisper-1", // standard whisper model
       });
 
       const transcript = transcription.text;
@@ -176,7 +178,7 @@ export async function registerRoutes(
       `;
 
       const aiResponse = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "meta-llama/llama-3.1-70b-instruct",
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
       });
@@ -365,7 +367,7 @@ export async function registerRoutes(
       `;
 
       const aiResponse = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "meta-llama/llama-3.1-70b-instruct",
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
       });
