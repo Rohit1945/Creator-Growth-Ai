@@ -1,36 +1,195 @@
-import type { Express } from "express";
-import type { Server } from "http";
-import { storage } from "./storage";
-import { api } from "@shared/routes";
-import { z } from "zod";
-import OpenAI, { toFile } from "openai";
-import multer from "multer";
-import fs from "fs/promises";
-import { spawn } from "child_process";
-import path from "path";
-import os from "os";
-import crypto from "crypto";
-import cors from "cors";
+    import type { Express } from "express";
+    import type { Server } from "http";
+    import { storage } from "./storage";
+    import { api } from "@shared/routes";
+    import { z } from "zod";
+    import cors from "cors";
+    import crypto from "crypto";
 
+    const HF_API_KEY = process.env.HUGGINGFACE_API_KEY;
 
-// Use OpenRouter via Replit AI Integrations for access to various models (Llama, Mistral, etc.)
-// This does not require your own API key and charges are billed to your credits.
-const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENROUTER_BASE_URL,
-});
+    async function queryHuggingFace(prompt: string) {
+      const response = await fetch(
+        "https://api-inference.huggingface.co/models/meta-llama/Llama-3.1-8B-Instruct",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${HF_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            inputs: prompt,
+            parameters: {
+              max_new_tokens: 900,
+              temperature: 0.7,
+              return_full_text: false,
+            },
+          }),
+        }
+      );
 
-const upload = multer({ 
-  dest: os.tmpdir(),
-  limits: {
-    fileSize: 1024 * 1024 * 1024, // 1GB
-  }
-});
+      const result = await response.json();
 
-async function extractAudio(videoPath: string): Promise<string> {
-  const audioPath = videoPath + ".mp3";
-  return new Promise((resolve, reject) => {
-    const ffmpeg = spawn("ffmpeg", ["-i", videoPath, "-vn", "-acodec", "libmp3lame", audioPath]);
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      return result[0]?.generated_text;
+    }
+
+    export async function registerRoutes(
+      httpServer: Server,
+      app: Express
+    ): Promise<Server> {
+
+      app.use(cors({
+        origin: [
+          "https://creator-growth--rohitsharmafanp.replit.app",
+          "http://localhost:5173"
+        ],
+        credentials: true
+      }));
+
+      // Track viewer
+      app.get("/", async (req, res, next) => {
+        const ip = req.ip || req.headers["x-forwarded-for"] || "unknown";
+        const ipHash = crypto.createHash("sha256").update(String(ip)).digest("hex");
+        await storage.recordViewer(ipHash).catch(console.error);
+        next();
+      });
+
+      app.get("/api/viewers", async (_req, res) => {
+        const count = await storage.getViewerCount();
+        res.json({ count });
+      });
+
+      // ---------------- ANALYZE ----------------
+      app.post(api.analyze.path, async (req, res) => {
+        try {
+          const input = api.analyze.input.parse(req.body);
+
+          const prompt = `
+    You are a professional YouTube growth strategist.
+
+    Platform: ${input.platform}
+    Niche: ${input.niche}
+    Channel Size: ${input.channelSize}
+    Video Type: ${input.videoType}
+    Content: ${input.idea || input.transcript || "N/A"}
+
+    Return ONLY valid JSON in this structure:
+
+    {
+      "titles": ["", "", ""],
+      "description": "",
+      "hashtags": ["", ""],
+      "tags": ["", ""],
+      "performancePrediction": {
+        "potential": "Low | Medium | High",
+        "confidenceScore": 0,
+        "reason": ""
+      },
+      "nextVideoIdeas": [
+        { "idea": "", "reason": "" },
+        { "idea": "", "reason": "" }
+      ]
+    }
+
+    Do not write anything outside JSON.
+    `;
+
+          const content = await queryHuggingFace(prompt);
+
+          if (!content) throw new Error("No response from HF");
+
+          const parsed = JSON.parse(content);
+
+          await storage.saveAnalysis({
+            platform: input.platform,
+            niche: input.niche,
+            channelSize: input.channelSize,
+            videoType: input.videoType,
+            idea: input.idea || null,
+            transcript: input.transcript || null,
+            youtubeUrl: input.youtubeUrl || null,
+            analysis: parsed
+          }).catch(console.error);
+
+          res.json(parsed);
+
+        } catch (err: any) {
+          console.error("Analyze error:", err);
+          res.status(500).json({ message: err.message });
+        }
+      });
+
+      // ---------------- CHAT ----------------
+      app.post("/api/chat", async (req, res) => {
+        try {
+          const { message, context } = req.body;
+
+          const prompt = `
+    You are a YouTube strategy consultant.
+
+    Context:
+    ${JSON.stringify(context)}
+
+    User message:
+    "${message}"
+
+    Return JSON:
+    {
+      "message": "",
+      "updatedAnalysis": null
+    }
+
+    Only return valid JSON.
+    `;
+
+          const content = await queryHuggingFace(prompt);
+          if (!content) throw new Error("No response");
+
+          res.json(JSON.parse(content));
+
+        } catch (err: any) {
+          res.status(500).json({ message: err.message });
+        }
+      });
+
+      // ---------------- COMPARE ----------------
+      app.post("/api/compare", async (req, res) => {
+        try {
+          const { userVideo } = req.body;
+
+          const prompt = `
+    Compare this YouTube video with niche benchmarks:
+
+    ${JSON.stringify(userVideo)}
+
+    Return JSON:
+    {
+      "score": 0,
+      "strength": "",
+      "weakness": "",
+      "recommendation": "",
+      "marketGap": ""
+    }
+
+    Return only JSON.
+    `;
+
+          const content = await queryHuggingFace(prompt);
+          if (!content) throw new Error("No response");
+
+          res.json(JSON.parse(content));
+
+        } catch (err: any) {
+          res.status(500).json({ message: err.message });
+        }
+      });
+
+      return httpServer;
+    }    const ffmpeg = spawn("ffmpeg", ["-i", videoPath, "-vn", "-acodec", "libmp3lame", audioPath]);
     ffmpeg.on("close", (code) => {
       if (code === 0) resolve(audioPath);
       else reject(new Error(`FFmpeg exited with code ${code}`));
@@ -143,11 +302,14 @@ export async function registerRoutes(
       const file = await toFile(audioFile, "audio.mp3");
 
       console.log("Transcribing with OpenAI...");
-      const transcription = await openai.audio.transcriptions.create({
-        file,
-        model: "whisper-1", // standard whisper model
-      });
+     // const transcription = await openai.audio.transcriptions.create({
+      //  file,
+       // model: "model: "meta-llama/llama-3.1-70b-instruct",", // standard whisper model
+   //   });
+// TEMP DISABLE
+// const transcription = await openai.audio.transcriptions.create(...)
 
+const transcript = "Temporary transcript for testing";
       const transcript = transcription.text;
       console.log("Transcript length:", transcript?.length);
       if (!transcript || transcript.trim().length < 5) {
@@ -238,7 +400,7 @@ export async function registerRoutes(
       `;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "model: "meta-llama/llama-3.1-70b-instruct",",
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
       });
@@ -304,7 +466,7 @@ export async function registerRoutes(
       `;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "model: "meta-llama/llama-3.1-70b-instruct",",
         messages: [
           { role: "system", content: "You are a helpful YouTube strategy assistant." },
           ...history.map((h: any) => ({ role: h.role, content: h.content })),
