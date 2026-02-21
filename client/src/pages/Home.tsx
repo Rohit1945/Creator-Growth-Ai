@@ -379,8 +379,10 @@ export default function Home() {
       
       // Update form and results
       form.setValue("transcript", data.transcript);
-      setLocalResult(data.analysis);
-      setHasResult(true);
+      if (data.analysis) {
+        setLocalResult(data.analysis);
+        setHasResult(true);
+      }
       setUploadState("done");
 
       toast({

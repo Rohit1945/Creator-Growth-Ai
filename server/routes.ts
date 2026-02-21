@@ -181,13 +181,62 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         });
       }
       
-      // Note: Full transcription requires a separate model like Whisper.
-      // For now, we return a helpful message to avoid breaking frontend expectation.
+      // 2. Perform analysis immediately using HuggingFace
       const transcript = "Automatic transcription is processing. For immediate results, please paste your script in the 'Text Idea' section.";
+      const analysisPrompt = `
+        System: Act as a YouTube strategist.
+        Analysis Context:
+        Platform: YouTube
+        Niche: General
+        Channel Size: Small
+        Content Type: Long
+        Input: ${transcript}
+        
+        Generate a JSON response exactly matching this structure:
+        {
+          "titles": ["Title 1", "Title 2", "Title 3"],
+          "description": "Engaging SEO description",
+          "hashtags": ["#tag1", "#tag2", "#tag3"],
+          "tags": ["tag1", "tag2", "tag3"],
+          "performancePrediction": {
+            "potential": "High",
+            "confidenceScore": 85,
+            "reason": "Clear market gap identified."
+          },
+          "nextVideoIdeas": [
+            { "idea": "Idea 1", "reason": "Reason 1" },
+            { "idea": "Idea 2", "reason": "Reason 2" }
+          ]
+        }
+        Return ONLY the JSON object.
+      `;
+
+      const content = await queryHuggingFace(analysisPrompt);
+      let analysis;
+      try {
+        analysis = JSON.parse(content);
+      } catch (jsonErr) {
+        console.error("Failed to parse HF response for upload:", content);
+        analysis = null;
+      }
+
+      if (analysis) {
+        await storage.saveAnalysis({
+          platform: "YouTube",
+          niche: "General",
+          channelSize: "Small",
+          videoType: "Long",
+          idea: null,
+          transcript,
+          youtubeUrl: null,
+          analysis
+        }).catch(err => console.error("History save failed:", err));
+      }
       
       res.json({ 
         transcript, 
-        message: "Video processed successfully. Please provide a brief summary in 'Text Idea' for the most accurate analysis."
+        analysis,
+        message: analysis ? "Video analyzed successfully!" : "Audio extracted, but analysis failed. Try Text Idea mode."
       });
     } catch (err: any) {
       console.error("Upload process error:", err);
