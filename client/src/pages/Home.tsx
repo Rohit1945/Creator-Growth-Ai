@@ -405,6 +405,7 @@ export default function Home() {
   };
 
   const onSubmit = (data: AnalysisRequest) => {
+    // 🔥 Prevent default behavior to stop page refresh
     const idea = data.idea?.trim();
     const transcript = data.transcript?.trim();
 
@@ -679,7 +680,10 @@ export default function Home() {
             className="lg:col-span-5 space-y-8"
           >
             <div className="glass-card rounded-3xl p-8 sticky top-8">
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                form.handleSubmit(onSubmit)(e);
+              }} className="space-y-6">
                 <div className="flex items-center justify-between mb-2">
                   <h2 className="text-2xl font-display font-bold flex items-center gap-2">
                     <Zap className="w-6 h-6 text-accent" />
