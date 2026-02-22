@@ -165,14 +165,21 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     let videoPath: string | undefined;
     let audioPath: string | undefined;
     
+    console.log("Upload route hit");
     try {
-      if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+      if (!req.file) {
+        console.log("No file in request");
+        return res.status(400).json({ message: "No file uploaded" });
+      }
       
       videoPath = req.file.path;
+      console.log("Video path:", videoPath);
       
       // Attempt audio extraction
       try {
+        console.log("Starting audio extraction...");
         audioPath = await extractAudio(videoPath);
+        console.log("Audio extraction success:", audioPath);
       } catch (audioErr) {
         console.error("Audio extraction failed:", audioErr);
         return res.status(422).json({ 
@@ -182,6 +189,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       }
       
       // 2. Perform analysis immediately using HuggingFace
+      console.log("Preparing HF analysis...");
       const transcript = "Automatic transcription is processing. For immediate results, please paste your script in the 'Text Idea' section.";
       const analysisPrompt = `
         System: Act as a YouTube strategist.
