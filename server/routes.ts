@@ -27,11 +27,11 @@ async function queryHuggingFace(prompt: string) {
   }
 
   // Use a reliable model for text generation
-  const modelId = "meta-llama/Llama-3.2-3B-Instruct";
+  const modelId = "HuggingFaceH4/zephyr-7b-beta";
   
   try {
     const response = await fetch(
-      `https://api-inference.huggingface.co/models/${modelId}`,
+      `https://router.huggingface.co/hf-inference/models/${modelId}`,
       {
         method: "POST",
         headers: {
