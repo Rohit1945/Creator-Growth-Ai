@@ -31,7 +31,7 @@ async function queryHuggingFace(prompt: string) {
   
   try {
     const response = await fetch(
-      `https://api-inference.huggingface.co/models/${modelId}`,
+      `https://router.huggingface.co/hf-inference/models/${modelId}`,
       {
         method: "POST",
         headers: {
