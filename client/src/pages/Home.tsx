@@ -172,7 +172,7 @@ export default function Home() {
     queryKey: user ? ["firestore-history", user.uid] : ["/api/history"],
     queryFn: async () => {
       if (!user) {
-        const res = await fetch("api.history.path");
+        const res = await fetch("/api/history");
         if (!res.ok) return [];
         return res.json();
       }
@@ -367,7 +367,7 @@ export default function Home() {
     formData.append("video", file);
 
     try {
-      const res = await fetch(api.uploadVideo.path, {
+      const res = await fetch("/api/uploadVideo", {
         method: "POST",
         body: formData,
       });
