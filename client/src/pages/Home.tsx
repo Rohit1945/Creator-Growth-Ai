@@ -368,7 +368,7 @@ export default function Home() {
 
     try {
       const res = await fetch(
-        "https://creator-growth-ai-ap7x.onrender.com/api/uploadVideo",
+        `${import.meta.env.VITE_API_URL}/api/uploadVideo`,
         {
           method: "POST",
           body: formData,
