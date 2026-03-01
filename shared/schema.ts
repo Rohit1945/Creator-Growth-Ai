@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, jsonb , timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -31,6 +31,13 @@ export const analysisResponseSchema = z.object({
 export const viewers = pgTable("viewers", {
   id: serial("id").primaryKey(),
   ipHash: text("ip_hash").notNull().unique(),
+});
+
+export const analysisHistory = pgTable("analysis_history", {
+  id: serial("id").primaryKey(),
+  transcript: text("transcript").notNull(),
+  analysis: jsonb("analysis").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const videoAnalyses = pgTable("video_analyses", {
