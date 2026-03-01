@@ -4,6 +4,7 @@ import cors from "cors";
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegPath from "ffmpeg-static";
 import fs from "fs";
+import pg from "pg";
 
 ffmpeg.setFfmpegPath(ffmpegPath);
 
