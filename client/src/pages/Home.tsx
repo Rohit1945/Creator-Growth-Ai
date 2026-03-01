@@ -367,10 +367,13 @@ export default function Home() {
     formData.append("video", file);
 
     try {
-      const res = await fetch("/api/uploadVideo", {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch(
+        "https://creator-growth-ai-ap7x.onrender.com/api/uploadVideo",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to upload video");
